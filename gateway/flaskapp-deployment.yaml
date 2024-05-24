@@ -18,7 +18,7 @@ spec:
       containers:
         - name: flaskapi
           image: ribsmocha/gateway
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 5000
 

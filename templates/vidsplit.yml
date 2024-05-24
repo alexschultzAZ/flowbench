@@ -1,0 +1,52 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://${OPENFAAS_ADDR}
+functions:
+  vidsplit:
+    lang: python-flow
+    handler: ./vidsplit
+    image: liduck/vidsplit:latest
+    environment:
+      PYTHONUNBUFFERED: 1
+      PIPELINE_STAGE: ${VIDSPLIT_STAGE}
+      VIDSPLIT_MODE: PIC
+      # PIC, quality from 2(best) to 31(worst), process rate from 0% to 100%
+      VIDSPLIT_PIC_EXT: jpg
+      VIDSPLIT_PIC_QUALITY: 1
+      VIDSPLIT_PIC_SRC_BUCKET: stage0
+      # VID
+      VIDSPLIT_SEGMENT_LEN: 0.5
+      read_timeout: "500s"
+      write_timeout: "500s"
+      exec_timeout: "500s"
+      NEXT_FUNCTION: ${VIDSPLIT_NEXT_FUNC}
+      NEXT_GATEWAY: ${OPENFAAS_ADDR}
+      ASYNC: 1
+      # influx db
+      DATABASE: ${INFLUXDB_DATABASE}
+      DATABASE_HOST: ${INFLUXDB_ADDR}
+      DATABASE_PORT: 8086
+      # input backend, mode: http, obj
+      INPUTMODE: ${VIDSPLIT_INPUT_MODE}
+      ENDPOINTINPUT: ${VIDSPLIT_INPUT_ADDR}
+      ACCESSKEYINPUT: ${VIDSPLIT_INPUT_ACC_KEY}
+      SECRETKEYINPUT: ${VIDSPLIT_INPUT_SEC_KEY}
+      LOCATIONINPUT: us-west-2
+      # output backend, mode: http, obj
+      OUTPUTMODE: ${VIDSPLIT_OUTPUT_MODE}
+      OUTPUTBUCKET: stage${VIDSPLIT_STAGE}
+      ENDPOINTOUTPUT: ${VIDSPLIT_OUTPUT_ADDR}
+      ACCESSKEYOUTPUT: ${VIDSPLIT_OUTPUT_ACC_KEY}
+      SECRETKEYOUTPUT: ${VIDSPLIT_OUTPUT_SEC_KEY}
+      LOCATIONOUTPUT: us-west-2
+    labels:
+        com.openfaas.scale.min: ${VIDSPLIT_CMIN:-1}
+        com.openfaas.scale.max: ${VIDSPLIT_CMAX:-1}
+        com.openfaas.scale.factor: 50
+    limits:
+      cpu: ${VIDSPLIT_CPU_LIMIT:-1}
+      memory: ${VIDSPLIT_MEM_LIMIT:-4Gi}
+      gpu: ${VIDSPLIT_GPU_LIMIT:-0}
+    constraints:
+      - ${VIDSPLIT_AFFINITY:-"nodetype=compute"}

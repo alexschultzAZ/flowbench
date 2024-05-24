@@ -1,0 +1,12 @@
+functions:
+  - hello-python:
+    name: hello-python
+    spec:
+      input:
+        - backend: minio
+      output:
+        - backend: minio
+          next_function:
+            - function: hello-python-2
+            - tier: cloud
+      sync: true
