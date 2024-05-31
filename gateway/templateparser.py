@@ -6,9 +6,9 @@ def process_template(filepath):
     with open(filepath, 'r') as file:
         template = yaml.safe_load(file)
         print(template)
-
+    
+    print(type(template))
     print(template['functions'][0])
-    print("test")
     function_name = template['functions'][0]['name']
     workflow_logic = template['workflow_logic']
 
