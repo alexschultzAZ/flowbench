@@ -2,8 +2,13 @@ provider:
   name: openfaas
   gateway: http://127.0.0.1:8080
 
-functions:
+workflow_logic:
+  name: pipeline
+  entry_point: function_one
+
+functions:  
   function_one:
+    name: function_one
     lang: python3
     handler: ./function_one
     image: function_one:latest
@@ -19,8 +24,10 @@ functions:
     order: 1 
     # We can use this flag to check if the function needs to be run in sync with the previous order or not
     sync: true
+    next_function: function_three
 
   function_two:
+    name: function_two
     lang: python3
     handler: ./function_two
     image: function_two:latest
@@ -33,8 +40,10 @@ functions:
       topic: "function_two_topic"
     order: 2
     sync: true
+    next_function: 
 
   function_three:
+    name: function_three
     lang: python3
     handler: ./function_three
     image: function_three:latest
@@ -47,6 +56,7 @@ functions:
       topic: "function_three_topic"
     order: 3
     sync: false
+    next_function: function_two
 
   function_four:
     lang: python3

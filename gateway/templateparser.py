@@ -1,33 +1,56 @@
 import yaml
-import requests
+from openfaas_deployment import build_openfaas_stack
 
+class WorkflowProcessor:
+    def __init__(self, template_path):
+        self.template_path = template_path
+        self.functions = {}
+        self.workflow_logic_data = {}
+        self.workflow_logic = ""
+        self.load_template()
 
-def process_template(filepath):
-    with open(filepath, 'r') as file:
-        template = yaml.safe_load(file)
-        print(template)
+    def load_template(self):
+        with open(self.template_path, 'r') as file:
+            template = yaml.safe_load(file)
+            self.functions = template['functions']
+            self.workflow_logic_data = template['workflow_logic']
+            self.workflow_logic = self.workflow_logic_data['name']
     
-    print(type(template))
-    print(template['functions'][0])
-    function_name = template['functions'][0]['name']
-    workflow_logic = template['workflow_logic']
+    def handle_pipeline(self, f):
+        # Until there is no next_function (end of the pipeline), process each function in the sequence
+        while True:
+            print("Processed function - {}".format(f['name']))
+            # Process each function (example placeholder)
+            # response = requests.get("http://127.0.0.1:8080/function/" + f['name'])
+            if 'next_function' not in f or f['next_function'] is None:
+                break
+            f = self.functions[f['next_function']]
+    
+    def process_workflow(self):
+        match self.workflow_logic:
+            case "pipeline":
+                print("pipeline")
+                entry_point = self.workflow_logic_data["entry_point"]
+                if entry_point not in self.functions:
+                    print("Entry function is misspelled or not defined")
+                else:
+                    self.handle_pipeline(self.functions[entry_point])
+            case "cron":
+                print("cron")
+            case "one-to_many":
+                print("one-to-many")
+            case "many-to-one":
+                print("many-to-one")
+            case "branching":
+                print("branching")
+            case _:
+                print("error")
+    
+    def deploy_functions(self):
+        # Pass functions dict to the OpenFaaS build/deployment function
+        build_openfaas_stack(self.functions)
 
-    print("hello")
-    response = requests.get("http://10.152.183.241:8080/function/" + function_name)
-    print(response.text)
-    # return 'you have hit the gateway lol and hello response is : ' + response.text
 
-
-    match workflow_logic:
-        case "pipeline":
-            print("pipeline")
-        case "cron":
-            print("cron")
-        case "one-to_many":
-            print("one-to-many")
-        case "many-to-one":
-            print("many-to-one")
-        case "branching":
-            print("branching")
-        case _:
-            print("error")
+if __name__ == "__main__":
+    processor = WorkflowProcessor("../templates/sample_template.yml")
+    processor.process_workflow()
