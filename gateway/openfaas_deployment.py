@@ -1,7 +1,5 @@
 import yaml
-import requests
 import subprocess
-
 
 def build_openfaas_stack(functions):
     # Template for the OpenFaaS stack
@@ -14,17 +12,23 @@ def build_openfaas_stack(functions):
         'functions': {}
     }
     
-    
     for function_name, details in functions.items():
-        stack['functions'][function_name] = {
-            'lang': details["lang"],
-            'handler': f'{details["handler"]}',
-            'image': f'{details["image"]}'
-        }
+        stack['functions'][function_name] = {}
+        stack['functions'][function_name]['lang'] = details["lang"]
+        stack['functions'][function_name]['handler'] = details["handler"]
+        stack['functions'][function_name]['image'] = details["image"]
+        if 'environment' in details:
+            print("Environment data found")
+            stack['functions'][function_name]['environment'] = details['environment']
+            print("Wrote Environment data in YAML")
+        if 'annotations' in details:
+            print("Annotations data found")
+            stack['functions'][function_name]['annotations'] = details['annotations']
+            print("Wrote Annotations data in YAML")
     
     # Write the stack to a YAML file
     with open('stack.yml', 'w') as file:
-        yaml.dump(stack, file, default_flow_style=False, sort_keys=False)
+        yaml.safe_dump(stack, file, default_flow_style=False, sort_keys=False)
 
 def run_command(command):
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -35,12 +39,7 @@ def run_command(command):
         print(stdout.decode('utf-8'))
 
 def deploy():
-    publish_command = "sudo faas-cli publish -f stack.yml"
-    deploy_command = "sudo faas-cli deploy -f stack.yml --update=true"
-    
-    # Run the commands
-    print("Publishing functions...")
-    run_command(publish_command)
+    deploy_command = "sudo faas-cli up -f stack.yml --update=true"
     
     print("Deploying functions...")
     run_command(deploy_command)
