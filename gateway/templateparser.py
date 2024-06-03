@@ -26,17 +26,29 @@ class WorkflowProcessor:
                 break
             f = self.functions[f['next_function']]
     
+    def handle_cron(self, f):
+        while True:
+            print("Processed function - {}".format(f['name']))
+            # Process each function (example placeholder)
+            # response = requests.get("http://127.0.0.1:8080/function/" + f['name'])
+            if 'next_function' not in f or f['next_function'] is None:
+                break
+            f = self.functions[f['next_function']]
     def process_workflow(self):
+        entry_point = None
+        if 'entry_point' in self.workflow_logic_data:
+            entry_point = self.workflow_logic_data["entry_point"]
         match self.workflow_logic:
             case "pipeline":
                 print("pipeline")
-                entry_point = self.workflow_logic_data["entry_point"]
+                
                 if entry_point not in self.functions:
                     print("Entry function is misspelled or not defined")
                 else:
                     self.handle_pipeline(self.functions[entry_point])
             case "cron":
                 print("cron")
+                self.handle_cron(self.functions[entry_point])
             case "one-to_many":
                 print("one-to-many")
             case "many-to-one":

@@ -1,5 +1,15 @@
 import yaml
+import requests
 import subprocess
+from croniter import croniter
+from croniter.croniter import CroniterBadCronError
+
+def validate_cron_expression(expression):
+    try:
+        croniter(expression)
+        return True
+    except CroniterBadCronError:
+        return False
 
 def build_openfaas_stack(functions):
     # Template for the OpenFaaS stack
@@ -23,6 +33,13 @@ def build_openfaas_stack(functions):
             print("Wrote Environment data in YAML")
         if 'annotations' in details:
             print("Annotations data found")
+            # Cron Job Expression Validation
+            if 'schedule' in details['annotations']:
+                if validate_cron_expression(details['annotations']['schedule']):
+                    print("The cron expression is valid.")
+                else:
+                    print("The cron expression is invalid.")
+                    return
             stack['functions'][function_name]['annotations'] = details['annotations']
             print("Wrote Annotations data in YAML")
     
@@ -44,3 +61,14 @@ def deploy():
     print("Deploying functions...")
     run_command(deploy_command)
     
+
+def main():
+    template_path = "./sample_template_cron.yml"
+    with open(template_path, 'r') as file:
+        template = yaml.safe_load(file)
+        build_openfaas_stack(template['functions'])
+        
+        # deploy()
+
+if __name__ == "__main__":
+    main()
