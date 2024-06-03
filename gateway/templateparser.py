@@ -38,14 +38,13 @@ class WorkflowProcessor:
         entry_point = None
         if 'entry_point' in self.workflow_logic_data:
             entry_point = self.workflow_logic_data["entry_point"]
+        if entry_point not in self.functions:
+            print("Entry function is misspelled or not defined")
+            return
         match self.workflow_logic:
             case "pipeline":
                 print("pipeline")
-                
-                if entry_point not in self.functions:
-                    print("Entry function is misspelled or not defined")
-                else:
-                    self.handle_pipeline(self.functions[entry_point])
+                self.handle_pipeline(self.functions[entry_point])
             case "cron":
                 print("cron")
                 self.handle_cron(self.functions[entry_point])
