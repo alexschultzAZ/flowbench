@@ -65,3 +65,44 @@ class WorkflowProcessor:
 if __name__ == "__main__":
     processor = WorkflowProcessor("../templates/sample_template.yml")
     processor.process_workflow()
+
+
+
+#   A , B, C → D Many-to-one
+
+# A → B , C , D One-to-many
+
+# {
+
+# order_1 : [f1, f2, f3],
+
+# order_2 : [f4],
+
+# }
+
+# {
+
+# order_1 : [f1],
+
+# order_2 : [f2, f3, f4],
+
+# }
+
+# Branching
+
+# F1 → if True: F2; else: F3
+
+#  name: branching
+
+# {
+
+# order_1: [f1]
+
+# order_2: [f2, f3]
+
+# }
+
+# if name == branching:
+
+# run order_2 fun based on the results of f1
+    

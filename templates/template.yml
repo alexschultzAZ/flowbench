@@ -1,0 +1,40 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://${OPENFAAS_ADDR}
+functions:
+  vidsplit:
+    lang: python-flow
+    handler: ./vidsplit
+    image: liduck/vidsplit:latest
+    environment:
+      TESTENVVAR: testvar1
+    labels:
+        com.openfaas.scale.min: ${VIDSPLIT_CMIN:-1}
+        com.openfaas.scale.max: ${VIDSPLIT_CMAX:-1}
+        com.openfaas.scale.factor: 50
+    limits:
+      cpu: ${VIDSPLIT_CPU_LIMIT:-1}
+      memory: ${VIDSPLIT_MEM_LIMIT:-4Gi}
+      gpu: ${VIDSPLIT_GPU_LIMIT:-0}
+    constraints:
+      - ${VIDSPLIT_AFFINITY:-"nodetype=compute"}
+    next_function:
+      function: "name of the function"
+    sync: true/false
+
+  hello-python:7649
+    lang: python3
+    handler: ./hello-python
+    image: harshitsharma48/hello-python:latest
+
+  motion-detection:
+    spec:
+    input:
+      backend: minio
+    output:
+      backend: s3
+    next function:
+      function: face-detection
+      tier: cloud
+    sync: true
