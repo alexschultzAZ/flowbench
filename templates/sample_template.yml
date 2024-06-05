@@ -60,6 +60,7 @@ functions:
     next_function: function_two
 
   function_four:
+    name: "function_four"
     lang: python3
     handler: ./function_four
     image: function_four:latest
@@ -72,6 +73,3 @@ functions:
       topic: "function_four_topic"
     order: 2
     sync: false
-
-  #Todo complete this for branching
-  branching_condition:
