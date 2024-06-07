@@ -77,6 +77,8 @@ class WorkflowProcessor:
         for func in self.execution_order[0]:
             # Call each function ASYNCHRONOUSLY using /async-function
             # response = requests.get("http://127.0.0.1:8080/async-function/" + func)
+            #use "X-Callback-Url: http://127.0.0.1:5000/async-handler" post request with
+            # functions_count and function_name as data
 
             # Dummy invocation
             response = requests.get('https://httpbin.org/status/200')
@@ -94,9 +96,10 @@ class WorkflowProcessor:
             print("Called the function at level 2 {} successfully".format(func))
             
 
-
-
     def handle_branching(self):
+        pass
+
+    def handle_many_to_one_callback():
         pass
 
     def process_workflow(self):

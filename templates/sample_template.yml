@@ -1,6 +1,6 @@
 provider:
   name: openfaas
-  gateway: http://117.0.0.1:8080
+  gateway: http://127.0.0.1:8080
 
 workflow_logic:
   name: pipeline
@@ -26,6 +26,7 @@ functions:
     # We can use this flag to check if the function needs to be run in sync with the previous order or not
     sync: true
     next_function: function_three
+    tier: edge
 
   function_two:
     name: function_two
@@ -41,7 +42,7 @@ functions:
       topic: "function_two_topic"
     order: 1
     sync: true
-    next_function: 
+    tier: edge
 
   function_three:
     name: function_three
@@ -58,6 +59,7 @@ functions:
     order: 1
     sync: false
     next_function: function_two
+    tier: edge
 
   function_four:
     name: "function_four"
@@ -73,3 +75,4 @@ functions:
       topic: "function_four_topic"
     order: 2
     sync: false
+    tier: edge
