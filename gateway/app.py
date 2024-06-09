@@ -61,15 +61,15 @@ curl -X POST http://127.0.0.1:5000/async-handler \
 -d '{"functions_count": 3, "function_name": "func4"}'
 
 """
+
 @app.route('/async-handler', methods=['POST'])
 def handle_many_to_one_async():
-    data = request.get_json()
-    functions_count = data.get('functions_count')
-    function_name = data.get('function_name')
-
+    functions_count = request.args.get('functions_count')
+    function_name = request.args.get('next_function')
     if not functions_count or not function_name:
         return jsonify({"message": "Invalid input"}), 400
 
+    functions_count = int(functions_count)
     # Get the current count from MinIO
     try:
         count_object = minio_client.get_object(bucket_name, 'count.json')
@@ -97,13 +97,29 @@ def handle_many_to_one_async():
         length=len(count_data_str),
         content_type='application/json'
     )
+    print("Function count = {}, count = {}".format(functions_count, count))
 
     # Check if the count matches the number of expected functions
     if count == functions_count:
+        print("Yesss condition satisfied")
         # All functions have successfully run, proceed to call the next function
         # Simulating the function call
-        # response = requests.get("http://127.0.0.1:8080/function/" + function_name)
+        response = requests.get("http://127.0.0.1:8080/function/" + function_name)
         print(f"Called the function at level 2 {function_name} successfully")
+
+        #Clear the count bucket for next invocations
+        count_data = {'count': 0}
+        count_data_str = json.dumps(count_data)
+        count_data_bytes = io.BytesIO(count_data_str.encode('utf-8'))
+
+        minio_client.put_object(
+            bucket_name,
+            'count.json',
+            data=count_data_bytes,
+            length=len(count_data_str),
+            content_type='application/json'
+        )
+        print("Cleared the async_counts for future new invocations")
         return jsonify({"message": f"Level 2 function {function_name} called successfully"}), 200
 
     return jsonify({"message": "Callback received, still counts not reached"}), 200

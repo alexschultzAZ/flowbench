@@ -47,6 +47,10 @@ def build_openfaas_stack(functions):
     with open('stack.yml', 'w') as file:
         yaml.safe_dump(stack, file, default_flow_style=False, sort_keys=False)
 
+
+    # call deploy
+    deploy()
+
 def run_command(command):
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()

@@ -73,33 +73,33 @@ class WorkflowProcessor:
         
 
     def handle_many_to_one(self):
-        count  = 0
+        functions_count = len(self.execution_order[0])
+        next_function = self.execution_order[1][0]
         for func in self.execution_order[0]:
-            # Call each function ASYNCHRONOUSLY using /async-function
-            # response = requests.get("http://127.0.0.1:8080/async-function/" + func)
-            #use "X-Callback-Url: http://127.0.0.1:5000/async-handler" post request with
+            # Call each function ASYNCHRONOUSLY using /async-functionh
             # functions_count and function_name as data
 
-            # Dummy invocation
-            response = requests.get('https://httpbin.org/status/200')
-            if response.status_code == 200:
-                count += 1
-                print("Request was successful for {}".format(func))
+            callback_url = f"http://192.168.0.183:5000/async-handler?functions_count={functions_count}&next_function={next_function}"
+            response = requests.post(
+                f'http://127.0.0.1:8080/async-function/{func}', 
+                headers={
+                    'X-Callback-Url': callback_url,
+                }
+            )
+            if response.status_code == 202:
+                print(f"Request was successful for {func}")
             else:
-                print("Request failed with status code:", response.status_code)
-        
-        if count == len(self.execution_order[0]):
-            # All the functions at level 1 have successfully run
-            # therefore calling the many-to-one function at level 2
-            func = self.execution_order[1][0]
-            # response = requests.get("http://127.0.0.1:8080/function/" + func)
-            print("Called the function at level 2 {} successfully".format(func))
+                print(f"Request failed with status code: {response.status_code}")
             
-
+    """
+     http://gateway.openfaas:5000
+     http://127.0.0.1:5000/async-handler?functions_count={functions_count}&next_function={next_function}
+     curl -X POST http://127.0.0.1:8080/async-function/func2  \
+          --data '{"function_count": 3, "next_function": "func4"}'  \
+              --header "Content-Type: application/json" \
+                    --header "X-Callback-Url: http://192.168.0.183:5000/async-handler?functions_count=3&next_function=func2"
+    """
     def handle_branching(self):
-        pass
-
-    def handle_many_to_one_callback():
         pass
 
     def process_workflow(self):
