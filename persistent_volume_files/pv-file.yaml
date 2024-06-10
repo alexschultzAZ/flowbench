@@ -9,6 +9,6 @@ spec:
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: /home/harshit/Project/local_storage
+    path: <local storage path>
   persistentVolumeReclaimPolicy: Retain
   storageClassName: microk8s-hostpath-immediate
