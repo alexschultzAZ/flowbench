@@ -21,17 +21,21 @@ class WorkflowProcessor:
             self.workflow_logic = self.workflow_logic_data['name']
 
     def build_execution_order(self):
-        for function_name, details in self.functions.items():
-            # print(type(details['order']))
-            if 'order' not in details:
-                continue
-            orderNumber = details['order']
-            if len(self.execution_order) < orderNumber:
-                self.execution_order.append([details['name']])
-            else:
-                self.execution_order[orderNumber - 1].append(details['name'])
+        if self.workflow_logic == "branching":
+            self.execution_order.append([self.workflow_logic_data['entry_func']])
+            self.execution_order.append([self.workflow_logic_data['conditions']['true_func'],
+                                            self.workflow_logic_data['conditions']['false_func']])
+        else:
+            for function_name, details in self.functions.items():
+                if 'order' not in details:
+                    continue
+                orderNumber = details['order']
+                if len(self.execution_order) < orderNumber:
+                    self.execution_order.append([details['name']])
+                else:
+                    self.execution_order[orderNumber - 1].append(details['name'])
         print("Execution order data is {}".format(self.execution_order))
-    
+
     def handle_pipeline(self):
         for funcList in self.execution_order:
             if(len(funcList) > 1):
@@ -99,8 +103,63 @@ class WorkflowProcessor:
               --header "Content-Type: application/json" \
                     --header "X-Callback-Url: http://192.168.0.183:5000/async-handler?functions_count=3&next_function=func2"
     """
+    def validate_conditions(self, conditions):
+        valid_operators = ["==", "!=", ">", "<", ">=", "<=", "and", "or"]
+        if conditions['operator'] not in valid_operators:
+            raise ValueError(f"Invalid operator: {conditions['operator']}")
+
+        if conditions['type'] not in ["int_comparison", "string_comparison", "boolean_comparison"]:
+            raise ValueError(f"Invalid condition type: {conditions['type']}")
+
     def handle_branching(self):
-        pass
+        entry_func = self.workflow_logic_data['entry_func']
+        conditions = self.workflow_logic_data['conditions']
+        self.validate_conditions(conditions)
+
+        response = requests.get(f"http://127.0.0.1:8080/function/{entry_func}")
+
+        if response.status_code == 200:
+            result = response.text.strip()  # assuming the function returns a result as string
+            # result = 'False' # assuming the function returns a result as string
+
+            operand = conditions['operand']
+            operator = conditions['operator']
+            true_func = conditions['true_func']
+            false_func = conditions['false_func']
+            
+            # Perform type conversion if necessary
+            if conditions['type'] == "int_comparison":
+                try:
+                    result = int(result)
+                    operand = int(operand)
+                except ValueError:
+                    raise ValueError(f"Invalid integer comparison between {result} and {operand}")
+
+            elif conditions['type'] == "boolean_comparison":
+                try:
+                    if type(result) == 'string':
+                        result = result.lower() == 'true'
+                    if type(operand) == 'string':
+                        operand = bool(operand)
+                except ValueError:
+                    raise ValueError(f"Invalid boolean comparison between {result} and {operand}")
+
+            condition_met = False
+            expression = f'{operand} {operator} {result}'
+            try:
+                condition_met = eval(expression)
+                print("Condition met is ", condition_met)
+            except ValueError:
+                raise ValueError(f"Invalid operator: {operator}")
+
+            next_func = true_func if condition_met else false_func
+            response = requests.get(f"http://127.0.0.1:8080/function/{next_func}")
+            if response.status_code == 200:
+                print(f"Request was successful for {next_func}")
+            else:
+                print(f"Request failed for {next_func} with status code: {response.status_code}")
+        else:
+            print(f"Request failed for {entry_func} with status code: {response.status_code}")
 
     def process_workflow(self):
         match self.workflow_logic:
@@ -118,6 +177,7 @@ class WorkflowProcessor:
                 self.handle_many_to_one()
             case "branching":
                 print("branching")
+                self.handle_branching()
             case _:
                 print("error")
     
@@ -139,43 +199,3 @@ if __name__ == "__main__":
     processor = WorkflowProcessor(args.template_file)
     processor.process_workflow()
 
-
-
-#   A , B, C → D Many-to-one
-
-# A → B , C , D One-to-many
-
-# {
-
-# order_1 : [f1, f2, f3],
-
-# order_2 : [f4],
-
-# }
-
-# {
-
-# order_1 : [f1],
-
-# order_2 : [f2, f3, f4],
-
-# }
-
-# Branching
-
-# F1 → if True: F2; else: F3
-
-#  name: branching
-
-# {
-
-# order_1: [f1]
-
-# order_2: [f2, f3]
-
-# }
-
-# if name == branching:
-
-# run order_2 fun based on the results of f1
-    

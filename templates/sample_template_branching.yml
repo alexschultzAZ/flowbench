@@ -3,9 +3,16 @@ provider:
   gateway: http://117.0.0.1:8080
 
 workflow_logic:
-  name: pipeline
-  entry_point: function_one
+  name: branching
+  entry_func: function_one
   location: "location of the parent folder where all the openfaas functions are present"
+  conditions:
+    type: boolean_comparison  # can be 'int_comparison' or 'string_comparison'
+    operand: False # can be int or string
+    b: response_of_function_one  # expected to be int or string
+    operator: or  # comparison operator
+    true_func: function_two
+    false_func: function_three
 
 functions:  
   function_one:
