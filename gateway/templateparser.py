@@ -1,7 +1,7 @@
 import yaml
 import requests
 import argparse
-from openfaas_deployment import build_openfaas_stack
+from openfaas_deployment import build_openfaas_stack, deploy
 
 class WorkflowProcessor:
     def __init__(self, template_path):
@@ -180,9 +180,10 @@ class WorkflowProcessor:
             case _:
                 print("error")
     
-    def deploy_functions(self):
+    def build_and_deploy_functions(self):
         # Pass functions dict to the OpenFaaS build/deployment function
         build_openfaas_stack(self.functions)
+        deploy()
 
 
 if __name__ == "__main__":
@@ -196,5 +197,6 @@ if __name__ == "__main__":
 
     # Create the WorkflowProcessor instance with the provided file name
     processor = WorkflowProcessor(args.template_file)
+    processor.build_and_deploy_functions()
     processor.process_workflow()
 
