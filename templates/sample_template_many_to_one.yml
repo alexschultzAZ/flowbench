@@ -21,7 +21,7 @@ functions:
       topic: "function_one_topic"
     # The order will decide the execution number of the functions this can be used to control the relations like onr to one or many to one.
     # For many-to-one we can have same order number for different functions which needs to be called on the same level. (Similar case in one-to-many)
-    order: 1
+    order: 2
     # We can use this flag to check if the function needs to be run in sync with the previous order or not
     sync: true
     next_function: function_three
@@ -70,5 +70,5 @@ functions:
       com.openfaas.scale.max: "1"
     annotations:
       topic: "function_four_topic"
-    order: 2
+    order: 1
     sync: false

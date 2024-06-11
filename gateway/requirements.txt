@@ -3,3 +3,4 @@ requests
 PyYAML
 debugpy
 croniter
+minio

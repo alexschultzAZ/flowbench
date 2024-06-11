@@ -7,7 +7,7 @@ class WorkflowProcessor:
     def __init__(self, template_path):
         self.template_path = template_path
         self.functions = {}
-        self.execution_order = []
+        self.execution_order = {}
         self.workflow_logic_data = {}
         self.workflow_logic = ""
         self.load_template()
@@ -21,42 +21,39 @@ class WorkflowProcessor:
             self.workflow_logic = self.workflow_logic_data['name']
 
     def build_execution_order(self):
-        if self.workflow_logic == "branching":
-            self.execution_order.append([self.workflow_logic_data['entry_func']])
-            self.execution_order.append([self.workflow_logic_data['conditions']['true_func'],
-                                            self.workflow_logic_data['conditions']['false_func']])
-        else:
-            for function_name, details in self.functions.items():
+        if self.workflow_logic != "branching":
+            
+            for _, details in self.functions.items():
                 if 'order' not in details:
                     continue
-                orderNumber = details['order']
-                if len(self.execution_order) < orderNumber:
-                    self.execution_order.append([details['name']])
+                order = 'level' + str(details['order'])
+                if order in self.execution_order:
+                    self.execution_order[order].append(details['name'])
                 else:
-                    self.execution_order[orderNumber - 1].append(details['name'])
+                    self.execution_order[order] = [details['name']]
+        self.execution_order = dict(sorted(self.execution_order.items()))
         print("Execution order data is {}".format(self.execution_order))
 
     def handle_pipeline(self):
-        for funcList in self.execution_order:
-            if(len(funcList) > 1):
-                print("Pipeline workflow cannot have two or more functions at the same level")
-                return
+        for __, funcList in self.execution_order.items():
+            # if(len(funcList) > 1):
+            #     print("Pipeline workflow cannot have two or more functions at the same level")
+            #     return
+
             # Call the openfaas function
             # response = requests.get("http://127.0.0.1:8080/function/" + funcList[0])
             print("Called " + funcList[0])
     
     def handle_cron(self):
-        for funcList in self.execution_order:
-            if(len(funcList) > 1):
-                print("Pipeline workflow cannot have two or more functions at the same level")
-                return
+        for _, funcList in self.execution_order.items():
+            
             # Call the openfaas function
             # response = requests.get("http://127.0.0.1:8080/function/" + funcList[0])
             print("Called " + funcList[0])
 
     def handle_one_to_many(self):
         # First process the function at level 1
-        func = self.execution_order[0][0]
+        func = self.execution_order['level1'][0]
 
         # response = requests.get("http://127.0.0.1:8080/function/" + func)
         # Dummy invocation
@@ -67,7 +64,7 @@ class WorkflowProcessor:
 
             # Calling functions at next level only if the first function returns successfully
             print("Now calling the functions at level 2 asynchronously")
-            for func in self.execution_order[1]:
+            for func in self.execution_order['level2']:
                 # Call each function ASYNCHRONOUSLY using /async-function
                 # response = requests.get("http://127.0.0.1:8080/async-function/" + func)
                 print("Called {} asynchronously".format(func))
@@ -77,12 +74,14 @@ class WorkflowProcessor:
         
 
     def handle_many_to_one(self):
-        functions_count = len(self.execution_order[0])
-        next_function = self.execution_order[1][0]
-        for func in self.execution_order[0]:
+        functions_count = len(self.execution_order['level1'])
+        next_function = self.execution_order['level2'][0]
+        print("Total \'many\' function count = {}, next_function = {}".format(functions_count, next_function))
+        for func in self.execution_order['level1']:
             # Call each function ASYNCHRONOUSLY using /async-functionh
             # functions_count and function_name as data
-
+            # print(f"Request was successful for {func}")
+            
             callback_url = f"http://192.168.0.183:5000/async-handler?functions_count={functions_count}&next_function={next_function}"
             response = requests.post(
                 f'http://127.0.0.1:8080/async-function/{func}', 
