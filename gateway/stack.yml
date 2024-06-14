@@ -1,0 +1,29 @@
+version: '1.0'
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+functions:
+  temp:
+    lang: python3
+    handler: ../demos/iot/temp
+    image: tarun0508/temp:latest
+    environment:
+      write_debug: true
+    annotations:
+      topic: function_one_topic
+  conversion:
+    lang: python3
+    handler: ../demos/iot/conversion
+    image: tarun0508/conversion:latest
+    environment:
+      write_debug: true
+    annotations:
+      topic: function_two_topic
+  savetodb:
+    lang: python3
+    handler: ../demos/iot/savetodb
+    image: tarun0508/savetodb:latest
+    environment:
+      write_debug: true
+    annotations:
+      topic: function_three_topic

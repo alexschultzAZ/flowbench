@@ -41,11 +41,16 @@ def init():
 
 @app.route('/uploadtemplate', methods=['POST'])
 def uploadTemplate():
+    print(request.files)
     file = request.files.getlist('files')[0]
-    filename = secure_filename(file.filename)
+    filename = file.filename
+    # filename = secure_filename(file.filename)
     if allowedFile(filename):
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        templateparser.process_template(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        processor = templateparser.WorkflowProcessor(filename)
+        processor.build_and_deploy_functions()
+        processor.process_workflow()
+        # templateparser.process_template(os.path.join(app.config['UPLOAD_FOLDER'], filename))
     else:
         return jsonify({'message': 'File type not allowed'}), 400
     return jsonify({"name": filename, "status": "success"})

@@ -14,7 +14,7 @@ class WorkflowProcessor:
         self.build_execution_order()
 
     def load_template(self):
-        with open(self.template_path, 'r') as file:
+        with open("../templates/" + self.template_path, 'r') as file:
             template = yaml.safe_load(file)
             self.functions = template['functions']
             self.workflow_logic_data = template['workflow_logic']
@@ -41,7 +41,7 @@ class WorkflowProcessor:
             #     return
 
             # Call the openfaas function
-            # response = requests.get("http://127.0.0.1:8080/function/" + funcList[0])
+            response = requests.get("http://127.0.0.1:8080/function/" + funcList[0])
             print("Called " + funcList[0])
     
     def handle_cron(self):
