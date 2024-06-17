@@ -1,0 +1,7 @@
+numpy
+opencv-python
+imutils
+minio
+influxdb
+influxdb_client
+requests
