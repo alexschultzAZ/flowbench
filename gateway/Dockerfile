@@ -7,9 +7,12 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
+
 RUN chmod +x install_openfaas_docker.sh
 
-RUN yes | ./install_openfaas_docker.sh
+# RUN yes | ./install_openfaas_docker.sh
+
+ENTRYPOINT [ "/install_openfaas_docker.sh" ]
 
 EXPOSE 5000
 EXPOSE 5678
