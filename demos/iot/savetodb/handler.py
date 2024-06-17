@@ -2,16 +2,19 @@ import io
 import json
 from minio import Minio
 from minio.error import S3Error
+import os
 
 def handle(req):
-    
+    minio_addr = os.getenv('minio')
+    print("env is " + minio_addr)
+
     minio_client = Minio(
-        "172.17.0.3:9000",
+        minio_addr,
         access_key="minioadmin",
         secret_key="minioadmin",
         secure=False
     )
-
+ 
     try:
         # Parse the incoming request
         # temp_data = json.loads(req)
@@ -35,3 +38,6 @@ def handle(req):
         return json.dumps({"message": "Temperature saved successfully"})
     except S3Error as e:
         return f"Error saving temperature data: {str(e)}"
+
+res = handle("")
+print(res)

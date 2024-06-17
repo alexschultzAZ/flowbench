@@ -2,16 +2,18 @@ import io
 import random
 import json
 from minio import Minio
-
+import os
 def handle(req):
     print("hi")
+    minio_addr = os.getenv('minio')
+    print("env is " + os.getenv('test'))
     minio_client = Minio(
-        "172.17.0.3:9000",
+        minio_addr,
         access_key="minioadmin",
         secret_key="minioadmin",
         secure=False
     )
-    print(minio_client)
+    #print(minio_client)
 
     # Generate a random temperature
     temperature = round(random.uniform(-20.0, 40.0), 2)
