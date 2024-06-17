@@ -1,21 +1,24 @@
+import os
 import yaml
 import requests
 import argparse
 from openfaas_deployment import build_openfaas_stack, deploy
 
 class WorkflowProcessor:
-    def __init__(self, template_path):
-        self.template_path = template_path
+    def __init__(self, file_path):
+        self.template_path = file_path
         self.functions = {}
         self.execution_order = {}
         self.workflow_logic_data = {}
         self.workflow_logic = ""
-        self.load_template()
+        self.load_template(file_path=file_path)
         self.build_execution_order()
 
-    def load_template(self):
-        with open("../templates/" + self.template_path, 'r') as file:
+    def load_template(self, file_path):
+        # UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), 'Downloads'))
+        with open(file_path, 'r') as file:
             template = yaml.safe_load(file)
+            # print(template)
             self.functions = template['functions']
             self.workflow_logic_data = template['workflow_logic']
             self.workflow_logic = self.workflow_logic_data['name']
