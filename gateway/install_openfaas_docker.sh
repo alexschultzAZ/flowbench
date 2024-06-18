@@ -29,10 +29,28 @@ curl -fsSL https://get.docker.com | sh
 echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
 
 # generate password for faas-cli
-export PASSWORD=$(head -c 12 /dev/urandom | shasum | cut -d' ' -f1)
-kubectl -n openfaas create secret generic basic-auth \
-  --from-literal=basic-auth-user=admin \
-  --from-literal=basic-auth-password="$PASSWORD"
+set -e
 
-# Log in to faas-cli
-echo -n $PASSWORD | faas-cli login --username="admin" --password-stdin
+# Function to log in to faas-cli
+faas_cli_login() {
+  PASSWORD=$1
+  echo "Logging in to faas-cli with provided password..."
+  echo -n $PASSWORD | faas-cli login --username="admin" --password-stdin || true
+}
+
+# Check if the basic-auth secret exists
+if kubectl -n openfaas get secret basic-auth; then
+  # Secret exists, decode the existing password
+  echo "basic-auth secret exists. Decoding the password..."
+  PASSWORD=$(kubectl -n openfaas get secret basic-auth -o jsonpath="{.data.basic-auth-password}" | base64 --decode)
+  faas_cli_login $PASSWORD
+else
+  # Secret does not exist, create a new password and secret
+  echo "basic-auth secret does not exist. Creating a new one..."
+  PASSWORD=$(head -c 12 /dev/urandom | shasum | cut -d' ' -f1)
+  kubectl -n openfaas create secret generic basic-auth \
+    --from-literal=basic-auth-user=admin \
+    --from-literal=basic-auth-password="$PASSWORD"
+  faas_cli_login $PASSWORD
+fi
+tail -f /dev/null

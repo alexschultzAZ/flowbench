@@ -6,10 +6,10 @@ COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 
 COPY . .
-
+COPY install_openfaas_docker.sh /install_openfaas_docker.sh
 
 RUN chmod +x install_openfaas_docker.sh
-
+# export PATH=$PATH:.
 # RUN yes | ./install_openfaas_docker.sh
 
 ENTRYPOINT [ "/install_openfaas_docker.sh" ]
