@@ -1,0 +1,46 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://192.168.1.99:31112
+functions:
+  modect:
+    lang: python-flow
+    handler: ./modect
+    image: ribsmocha/modect:latest
+    environment:
+      OPENFAAS_URL: http://192.168.1.99:31112
+      PYTHONUNBUFFERED: 1
+      PIPELINE_STAGE: 2
+      MODECT_MIN_AREA: 5
+      MODECT_SKIP_RATE: 1
+      read_timeout: "60s"
+      write_timeout: "60s"
+      exec_timeout: "60s"
+      NEXT_FUNCTION: facextract
+      NEXT_GATEWAY: 192.168.1.99:31112
+      ASYNC: 1
+      # influx db
+      DATABASE: stats
+      DATABASE_URL: http://3.88.198.172:8086
+      ORG: visalab
+      INFLUXDB_TOKEN: K6OtOWvYylyM2gGV2dJ9eNPh-6iuW0mYKrkNVv3SVhAFHSlhh6mKIzb6UyrGZ-es_ygB_-0kxaY_rb7AHaPyWA==
+
+      # input backend, mode: http, obj
+      INPUTMODE: obj
+      ENDPOINTINPUT: 192.168.1.99:9000
+      ACCESSKEYINPUT: minioadmin
+      SECRETKEYINPUT: minioadmin
+      LOCATIONINPUT: us-west-2
+      # output backend, mode: http, obj
+      OUTPUTMODE: obj
+      OUTPUTBUCKET: stage2
+      ENDPOINTOUTPUT: 192.168.1.99:9000
+      ACCESSKEYOUTPUT: minioadmin
+      SECRETKEYOUTPUT: minioadmin
+      LOCATIONOUTPUT: us-west-2
+    labels:
+        com.openfaas.scale.min: 1
+        com.openfaas.scale.max: 1
+        com.openfaas.scale.factor: 50
+    constraints:
+      - ${MODECT_AFFINITY:-"nodetype=compute"}
