@@ -1,0 +1,4 @@
+opencv-python
+minio
+face-recognition
+numpy
