@@ -38,13 +38,15 @@ class WorkflowProcessor:
         print("Execution order data is {}".format(self.execution_order))
 
     def handle_pipeline(self):
+        prevResponse = {"bucketName" : "stage0", "fileName" : "test_00.mp4"}
         for __, funcList in self.execution_order.items():
             # if(len(funcList) > 1):
             #     print("Pipeline workflow cannot have two or more functions at the same level")
             #     return
 
             # Call the openfaas function
-            response = requests.get("http://127.0.0.1:8080/function/" + funcList[0])
+            response = requests.post("http://127.0.0.1:8080/function/" + funcList[0], prevResponse)
+            prevResponse = response
             print("Called " + funcList[0])
     
     def handle_cron(self):

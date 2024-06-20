@@ -1,0 +1,54 @@
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+
+workflow_logic:
+  name: pipeline
+
+functions:
+
+  vidsplit:
+    name: vidsplit
+    lang: python3
+    handler: ../demos/video-analytics-revised/vidsplit
+    image: raghavtiruvallur/vidsplit:latest
+    order: 1
+    environment:
+      OUTPUTBUCKET: stage1
+      OUTPUTMODE: obj
+      INPUTMODE: obj
+      write_debug: true
+   
+
+  # modect:
+  #   name: modect
+  #   lang: python3
+  #   handler: ../demos/video-analytics-revised/modect
+  #   image: raghavtiruvallur/modect:latest
+  #   order: 2
+  #   environment:
+  #     INPUTMODE: obj
+  #     OUTPUTBUCKET: stage2
+  #     write_debug: true
+
+  # facextract:
+  #   name: facextract
+  #   lang: python3
+  #   handler: ../demos/video-analytics-revised/facextract
+  #   image: raghavtiruvallur/faceextract:latest
+  #   order: 3
+  #   environment:
+  #     OUTPUTMODE: obj
+  #     OUTPUTBUCKET: stage3
+  #     write_debug: true
+
+  # facerec:
+  #   name: facerec
+  #   lang: python3
+  #   handler: ../demos/video-analytics-revised/facerec
+  #   image: raghavtiruvallur/facerec:latest
+  #   order: 4
+  #   environment:
+  #     OUTPUTMODE: obj
+  #     OUTPUTBUCKET: stage4
+  #     write_debug: true
