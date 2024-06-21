@@ -1,0 +1,15 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+functions:
+  check-vital-signs:
+    lang: dockerfile
+    handler: ./check-vital-signs
+    image: tarun0508/check-vital-signs:latest
+    environment:
+      MINIO_ADDR: 172.17.0.3:9000
+      HEART_DATA: heart-data
+      MODEL_BUCKET: ml-model
+      MODEL_FILENAME: logistic_regression_model.pkl
+      write_debug: true

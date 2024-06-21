@@ -1,12 +1,26 @@
-version: '1.0'
 provider:
   name: openfaas
   gateway: http://127.0.0.1:8080
+
+workflow_logic:
+  name: branching
+  entry_func: check-vital-signs
+  conditions:
+    type: string_comparison  # can be 'int_comparison' or 'string_comparison'
+    operand: 'heart_attack' # can be int or string
+    b: response_of_function_one  # expected to be int or string
+    operator: ==  # comparison operator
+    true_func: alert-healthcare
+    false_func: store-in-db
+
 functions:
+
   check-vital-signs:
+    name: check-vital-signs
     lang: dockerfile
     handler: ../demos/health-monitor/check-vital-signs
     image: tarun0508/check-vital-signs:latest
+    order: 1
     environment:
       MINIO_ADDR: 172.17.0.3:9000
       HEART_DATA: heart-data
@@ -16,17 +30,23 @@ functions:
     annotations:
       topic: cron-function
       schedule: '*/1 * * * *'
+    
   alert-healthcare:
+    name: alert-healthcare
     lang: python3
     handler: ../demos/health-monitor/alert-healthcare
     image: tarun0508/alert-healthcare:latest
+    order: 1
     environment:
       HEART_DATA: heart-data
       write_debug: true
   store-in-db:
+    name: store-in-db
     lang: python3
     handler: ../demos/health-monitor/store-in-db
     image: tarun0508/store-in-db:latest
+    order: 1
     environment:
       HEART_DATA: heart-data
       write_debug: true
+
