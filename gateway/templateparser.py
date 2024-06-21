@@ -151,7 +151,7 @@ class WorkflowProcessor:
                     raise ValueError(f"Invalid boolean comparison between {result} and {operand}")
 
             condition_met = False
-            expression = f'{operand} {operator} {result}'
+            expression = f"'{operand}' {operator} '{result}'"
             try:
                 condition_met = eval(expression)
                 print("Condition met is ", condition_met)
