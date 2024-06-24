@@ -12,3 +12,30 @@ functions:
       OUTPUTMODE: obj
       INPUTMODE: obj
       write_debug: true
+  modect:
+    lang: dockerfile
+    handler: ../demos/video-analytics-revised/modect
+    image: raghavtiruvallur/modect:latest
+    environment:
+      INPUTMODE: obj
+      OUTPUTBUCKET: stage2
+      PIPELINE_STAGE: 2
+      MODECT_MIN_AREA: 5
+      MODECT_SKIP_RATE: 1
+      write_debug: true
+  facextract:
+    lang: dockerfile
+    handler: ../demos/video-analytics-revised/facextract
+    image: raghavtiruvallur/facextract:latest
+    environment:
+      OUTPUTMODE: obj
+      OUTPUTBUCKET: stage3
+      write_debug: true
+  facerec:
+    lang: dockerfile
+    handler: ../demos/video-analytics-revised/facerec
+    image: raghavtiruvallur/facerec:latest
+    environment:
+      OUTPUTMODE: obj
+      OUTPUTBUCKET: stage4
+      write_debug: true

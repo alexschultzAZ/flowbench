@@ -1,5 +1,6 @@
 import os
 import yaml
+import json
 import requests
 import argparse
 from openfaas_deployment import build_openfaas_stack, deploy
@@ -38,7 +39,7 @@ class WorkflowProcessor:
         print("Execution order data is {}".format(self.execution_order))
 
     def handle_pipeline(self):
-        prevResponse = {"bucketName" : "stage0", "fileName" : "test_00.mp4"}
+        prevResponse = {"bucketName" : "stage0", "fileName" : "test_07.mp4"}
         for __, funcList in self.execution_order.items():
             # if(len(funcList) > 1):
             #     print("Pipeline workflow cannot have two or more functions at the same level")
@@ -46,7 +47,8 @@ class WorkflowProcessor:
 
             # Call the openfaas function
             response = requests.post("http://127.0.0.1:8080/function/" + funcList[0], prevResponse)
-            prevResponse = response
+            print("Response =",response.text)
+            prevResponse = response.text
             print("Called " + funcList[0])
     
     def handle_cron(self):
