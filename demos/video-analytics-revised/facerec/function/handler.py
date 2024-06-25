@@ -13,7 +13,7 @@ from .handler1 import *
 from datetime import datetime
 import ast
 
-MINIO_ADDRESS = "172.17.0.2:9000"
+MINIO_ADDRESS = "192.168.0.219:9000"
 minio_client = Minio(
     MINIO_ADDRESS,
     access_key="minioadmin",

@@ -10,7 +10,7 @@ from zipfile import ZIP_STORED
 import subprocess
 import math
 
-MINIO_ADDRESS = "172.17.0.2:9000"
+MINIO_ADDRESS = "192.168.0.219:9000"
 minio_client = Minio(
     MINIO_ADDRESS,
     access_key="minioadmin",
@@ -128,46 +128,50 @@ def handle(req):
     file = ''
     outdir = ''
     inputMode = os.getenv("INPUTMODE")
-    if inputMode == 'http':
-        file = os.getenv("Http_Referer")
-        new_file = f"/tmp/{datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}-{file}"
-        with open(new_file, "wb+") as f:
-            f.write(sys.stdin.buffer.read())
+    response = {}
+    try:
+        if inputMode == 'http':
+            file = os.getenv("Http_Referer")
+            new_file = f"/tmp/{datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}-{file}"
+            with open(new_file, "wb+") as f:
+                f.write(sys.stdin.buffer.read())
 
-        compute_start = time.time()
-        outdir = solve(new_file, file.split(".")[0])
-        compute_end = time.time()
-    else:
-        # print("Enter")
-        # st = get_stdin()
-        # bucket, file = st.split(' ')
-        # file = file.rstrip("\n")
-        # print(file)
-        #print(req)
-        req = dict(item.split("=") for item in req.split("&"))
-        bucket = req["bucketName"]
-        file = req["fileName"]
-        #print(bucket,file)
-        load_start = time.time()
-        new_file = load_from_minio(bucket, file)
-        load_end = time.time()
+            compute_start = time.time()
+            outdir = solve(new_file, file.split(".")[0])
+            compute_end = time.time()
+        else:
+            # print("Enter")
+            # st = get_stdin()
+            # bucket, file = st.split(' ')
+            # file = file.rstrip("\n")
+            # print(file)
+            #print(req)
+            req = dict(item.split("=") for item in req.split("&"))
+            bucket = req["bucketName"]
+            file = req["fileName"]
+            #print(bucket,file)
+            load_start = time.time()
+            new_file = load_from_minio(bucket, file)
+            load_end = time.time()
 
-        compute_start = time.time()
-        outdir = solve(new_file, file.split(".")[0])
-        #print(outdir)
-        compute_end = time.time()
+            compute_start = time.time()
+            outdir = solve(new_file, file.split(".")[0])
+            #print(outdir)
+            compute_end = time.time()
 
-    if outdir:
-        files = os.listdir(outdir)
-        outputMode = os.getenv("OUTPUTMODE")
-        if outputMode == 'obj':
-            bucket = os.getenv("OUTPUTBUCKET")
-            store_start = time.time()
-            store_to_minio(bucket, outdir)
-            store_end = time.time()
+        if outdir:
+            files = os.listdir(outdir)
+            outputMode = os.getenv("OUTPUTMODE")
+            if outputMode == 'obj':
+                bucket = os.getenv("OUTPUTBUCKET")
+                store_start = time.time()
+                store_to_minio(bucket, outdir)
+                store_end = time.time()
 
-    os.remove(new_file)
-    if os.path.exists(outdir):
-        shutil.rmtree(outdir)
+        os.remove(new_file)
+        if os.path.exists(outdir):
+            shutil.rmtree(outdir)
+    except Exception as e:
+        response.update({"exception": str(e)})
     response = {"bucketName" : os.getenv("OUTPUTBUCKET"), "fileName" : files[0]}
     return response

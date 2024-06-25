@@ -6,7 +6,7 @@ functions:
   vidsplit:
     lang: python3
     handler: ../demos/video-analytics-revised/vidsplit
-    image: raghavtiruvallur/vidsplit:latest
+    image: harshitsharma48/vidsplit:latest
     environment:
       OUTPUTBUCKET: stage1
       OUTPUTMODE: obj
@@ -15,7 +15,7 @@ functions:
   modect:
     lang: dockerfile
     handler: ../demos/video-analytics-revised/modect
-    image: raghavtiruvallur/modect:latest
+    image: harshitsharma48/modect:latest
     environment:
       INPUTMODE: obj
       OUTPUTBUCKET: stage2
@@ -26,7 +26,7 @@ functions:
   facextract:
     lang: dockerfile
     handler: ../demos/video-analytics-revised/facextract
-    image: raghavtiruvallur/facextract:latest
+    image: harshitsharma48/facextract:latest
     environment:
       OUTPUTMODE: obj
       OUTPUTBUCKET: stage3
@@ -34,7 +34,7 @@ functions:
   facerec:
     lang: dockerfile
     handler: ../demos/video-analytics-revised/facerec
-    image: raghavtiruvallur/facerec:latest
+    image: harshitsharma48/facerec:latest
     environment:
       OUTPUTMODE: obj
       OUTPUTBUCKET: stage4

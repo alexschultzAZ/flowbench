@@ -104,13 +104,13 @@ def convert_faas_to_k8s(openfaas_yaml, pvc_name, mount_path):
     return k8s_yaml
 
 # Example usage
-openfaas_yaml_file = '/home/harshit/Project/functions/new_fun/hello-python.yml'
+openfaas_yaml_file = '/home/harshit/Project/flowbench/demos/video-analytics-revised/video-analytics-revised.yml'
 pvc_name = 'local-storage-claim'  # Replace with your PVC name
 mount_path = '/mnt/local-storage'  # Replace with your desired mount path in the container
 
 # Convert and print the Kubernetes Deployment YAML
 k8s_yaml_output = convert_faas_to_k8s(openfaas_yaml_file, pvc_name, mount_path)
 print(k8s_yaml_output)
-with open('/home/harshit/Project/functions/new_fun/kubernetes.yaml', 'w') as f:
+with open('/home/harshit/Project/flowbench/demos/video-analytics-revised/kubernetes.yaml', 'w') as f:
     f.write(k8s_yaml_output)
     # yaml.safe_dump(k8s_yaml_output, f, default_flow_style=False)
