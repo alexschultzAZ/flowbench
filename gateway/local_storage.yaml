@@ -1,0 +1,249 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vidsplit
+  namespace: openfaas-fn
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      faas_function: vidsplit
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        faas_function: vidsplit
+    spec:
+      containers:
+      - env:
+        - name: OUTPUTBUCKET
+          value: stage1
+        - name: OUTPUTMODE
+          value: obj
+        - name: INPUTMODE
+          value: obj
+        - name: write_debug
+          value: 'True'
+        - name: STORAGE_TYPE
+          value: local
+        - name: MOUNT_PATH
+          value: /mnt/local-storage
+        - name: PVC_NAME
+          value: local-storage-claim
+        image: harshitsharma48/vidsplit:latest
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /_/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: vidsplit
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /_/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /mnt/local-storage
+          name: local-storage
+      volumes:
+      - name: local-storage
+        persistentVolumeClaim:
+          claimName: local-storage-claim
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: modect
+  namespace: openfaas-fn
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      faas_function: modect
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        faas_function: modect
+    spec:
+      containers:
+      - env:
+        - name: INPUTMODE
+          value: obj
+        - name: OUTPUTBUCKET
+          value: stage2
+        - name: PIPELINE_STAGE
+          value: '2'
+        - name: MODECT_MIN_AREA
+          value: '5'
+        - name: MODECT_SKIP_RATE
+          value: '1'
+        - name: write_debug
+          value: 'True'
+        image: harshitsharma48/modect:latest
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /_/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: modect
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /_/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /mnt/local-storage
+          name: local-storage
+      volumes:
+      - name: local-storage
+        persistentVolumeClaim:
+          claimName: local-storage-claim
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: facextract
+  namespace: openfaas-fn
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      faas_function: facextract
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        faas_function: facextract
+    spec:
+      containers:
+      - env:
+        - name: OUTPUTMODE
+          value: obj
+        - name: OUTPUTBUCKET
+          value: stage3
+        - name: write_debug
+          value: 'True'
+        image: harshitsharma48/facextract:latest
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /_/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: facextract
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /_/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /mnt/local-storage
+          name: local-storage
+      volumes:
+      - name: local-storage
+        persistentVolumeClaim:
+          claimName: local-storage-claim
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: facerec
+  namespace: openfaas-fn
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      faas_function: facerec
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        faas_function: facerec
+    spec:
+      containers:
+      - env:
+        - name: OUTPUTMODE
+          value: obj
+        - name: OUTPUTBUCKET
+          value: stage4
+        - name: write_debug
+          value: 'True'
+        image: harshitsharma48/facerec:latest
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /_/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: facerec
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /_/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /mnt/local-storage
+          name: local-storage
+      volumes:
+      - name: local-storage
+        persistentVolumeClaim:
+          claimName: local-storage-claim

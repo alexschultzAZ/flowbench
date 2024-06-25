@@ -12,6 +12,9 @@ functions:
       OUTPUTMODE: obj
       INPUTMODE: obj
       write_debug: true
+      STORAGE_TYPE: local
+      MOUNT_PATH: /mnt/local-storage
+      PVC_NAME: local-storage-claim
   modect:
     lang: dockerfile
     handler: ../demos/video-analytics-revised/modect
