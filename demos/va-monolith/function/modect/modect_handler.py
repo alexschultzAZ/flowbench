@@ -53,6 +53,42 @@ def get_stdin():
             break
     return buf
 
+
+def store_to_local_storage(mount_path, dir_name, source_dir):
+    files = os.listdir(source_dir)
+    if len(files) == 0:
+        return
+    if not os.path.exists(mount_path):
+        os.makedirs(mount_path)
+            
+    destination_dir = os.path.join(mount_path, os.path.basename(dir_name))
+    if not os.path.exists(destination_dir):
+        os.makedirs(destination_dir)
+    
+    # Move files from outdir to destination_dir
+    for file_name in files:
+        src_file = os.path.join(source_dir, file_name)
+        dst_file = os.path.join(destination_dir, file_name)
+        shutil.move(src_file, dst_file)
+
+def load_from_local_storage(mount_path, input_dir, filename):
+    # Check if the input directory exists
+    if not os.path.exists(input_dir):
+        return f"Directory '{input_dir}' does not exist.", False
+    
+    # Check if the input directory is indeed a directory
+    if not os.path.isdir(input_dir):
+        return f"'{input_dir}' is not a directory.", False
+    
+    # Construct the full file path
+    file_path = os.path.join(mount_path, input_dir, filename)
+    
+    # Check if the file exists at the constructed file path
+    if not os.path.isfile(file_path):
+        return f"File '{filename}' does not exist in the directory '{input_dir}'.", False
+    
+    return file_path, True
+
 def modect_handler(req):
     request_start_ts = str(round(time.time() * 1000000000))
     compute_start = 0
@@ -68,6 +104,9 @@ def modect_handler(req):
     outdir = ''
 
     inputMode = os.getenv('INPUTMODE')
+    storage_mode = os.getenv('STORAGE_MODE')
+    mount_path = os.getenv('MOUNT_PATH')
+    output_bucket_name = os.getenv("OUTPUTBUCKET2")
     if inputMode == 'http':
         file = os.getenv("Http_Referer")
         new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
@@ -87,20 +126,37 @@ def modect_handler(req):
         #req = dict(item.split("=") for item in req.split("&"))
         bucket = reqJSON["bucketName"]
         file =  reqJSON["fileName"]
-        load_start = time.time()
-        new_file = load_from_minio(bucket, file)
-        load_end = time.time()
+        
+        if 'local_storage' in storage_mode:
+            response, isPresent = load_from_local_storage(mount_path=mount_path, input_dir=bucket, filename=file)
+                
+            if isPresent:
+                outdir = solve(response, file.split(".")[0])
+            else:
+                print('No input file to read')
+                print(response)
+                exit(1)
+        else:
+            load_start = time.time()
+            new_file = load_from_minio(bucket, file)
+            load_end = time.time()
 
-        original_filename = file.split("-")[0]
-        compute_start = time.time()
-        outdir = solve(new_file)
-        compute_end = time.time()
+            original_filename = file.split("-")[0]
+            compute_start = time.time()
+            outdir = solve(new_file)
+            compute_end = time.time()
+
 
     if outdir != None and outdir != '':
         files = os.listdir(outdir)
         outputMode = 'obj'
+
+        if 'local_storage' in storage_mode:
+            new_dir = output_bucket_name
+            store_to_local_storage(mount_path=mount_path, dir_name=new_dir, source_dir=outdir)
+
         if outputMode == 'obj':
-            bucket = os.getenv("OUTPUTBUCKET2")
+            bucket = output_bucket_name
             store_start = time.time()
             store_to_minio(bucket, outdir)
             store_end = time.time()
@@ -108,5 +164,5 @@ def modect_handler(req):
     os.remove(new_file)
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
-    response = {"bucketName" : os.getenv("OUTPUTBUCKET2"), "fileName" : files[0]}
+    response = {"bucketName" : output_bucket_name,"fileName" : files[0]}
     return response
