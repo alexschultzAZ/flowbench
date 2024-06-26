@@ -12,7 +12,7 @@ import math
 
 MINIO_ADDRESS = "172.17.0.2:9000"
 minio_client = Minio(
-    MINIO_ADDRESS,
+    os.getenv('ENDPOINTINPUT'),
     access_key="minioadmin",
     secret_key="minioadmin",
     secure=False
@@ -49,7 +49,7 @@ def solve(req, original_filename):
 
     ext = "jpg"
     quality = "1"
-    os.chdir("/home/app/function/vidsplit/tmp")
+    os.chdir("/home/tarun/Desktop/flowbench/flowbench-va-revised/flowbench/demos/va-monolith/function/vidsplit/tmp")
     split_cmd = './ffmpeg -i ' + req + ' -q:v ' + quality + \
                     ' -qmin 1 -qmax 1 ' + output_dir + '/' + \
                     original_filename+'-stage-' + str(stage) + '-' + os.uname()[1] + '-' + \
@@ -126,6 +126,7 @@ def get_stdin():
 
 def load_from_local_storage(mount_path, input_dir, filename):
     # Check if the input directory exists
+    input_dir = os.path.join(mount_path, input_dir)
     if not os.path.exists(input_dir):
         return f"Directory '{input_dir}' does not exist.", False
     
@@ -179,6 +180,7 @@ def vidsplit_handler(req):
     output_bucket_name = os.getenv('OUTPUTBUCKET1')
     fileName = ''
     response = {}
+    # files =[]
     try:
         if input_mode == 'http':
             file = os.getenv("Http_Referer")
@@ -189,16 +191,18 @@ def vidsplit_handler(req):
             outdir = solve(new_file, file.split(".")[0])
         else:
             req = dict(item.split("=") for item in req.split("&"))
+            print(req)
             bucket = req["bucketName"]
             file = req["fileName"]
             if 'local_storage' in storage_mode:
-                response, isPresent = load_from_local_storage(mount_path=mount_path, input_dir=bucket, filename=file)
-                
+                response_msg, isPresent = load_from_local_storage(mount_path=mount_path, input_dir=bucket, filename=file)
+                print(f'ispresent is {isPresent}, response_msg = {response_msg}')
                 if isPresent:
-                    outdir = solve(response, file.split(".")[0])
+                    new_file = response_msg
+                    outdir = solve(new_file, file.split(".")[0])
                 else:
                     print('No input file to read')
-                    print(response)
+                    print(response_msg)
                     exit(1)
             else:
                 new_file = load_from_minio(bucket, file)
@@ -226,6 +230,12 @@ def vidsplit_handler(req):
                 shutil.rmtree(outdir)
         
     except Exception as e:
+        print(e)
         response.update({"exception": str(e)})
     response = {"bucketName" : output_bucket_name, "fileName" : files[0]}
     return response
+    
+
+
+resp = vidsplit_handler("bucketName=stage0&fileName=test_00.mp4")
+print(resp)

@@ -13,11 +13,11 @@ from minio import Minio
 import json
 from minio.error import InvalidResponseError
 from datetime import datetime
-from .modect_handle import solve
+from modect_handle import solve
 
 MINIO_ADDRESS = "172.17.0.2:9000"
 minio_client = Minio(
-    MINIO_ADDRESS,
+    os.getenv('ENDPOINTINPUT'),
     access_key="minioadmin",
     secret_key="minioadmin",
     secure=False
@@ -73,6 +73,7 @@ def store_to_local_storage(mount_path, dir_name, source_dir):
 
 def load_from_local_storage(mount_path, input_dir, filename):
     # Check if the input directory exists
+    input_dir = os.path.join(mount_path, input_dir)
     if not os.path.exists(input_dir):
         return f"Directory '{input_dir}' does not exist.", False
     
@@ -131,7 +132,8 @@ def modect_handler(req):
             response, isPresent = load_from_local_storage(mount_path=mount_path, input_dir=bucket, filename=file)
                 
             if isPresent:
-                outdir = solve(response, file.split(".")[0])
+                new_file = response
+                outdir = solve(new_file)
             else:
                 print('No input file to read')
                 print(response)
@@ -166,3 +168,6 @@ def modect_handler(req):
         shutil.rmtree(outdir)
     response = {"bucketName" : output_bucket_name,"fileName" : files[0]}
     return response
+# test_00-stage-1-2024-06-25-21-53-03-372217.zip
+resp = modect_handler({'bucketName': 'stage1', 'fileName': 'test_00-stage-1-2024-06-25-21-53-03-372217.zip'})
+print(resp)

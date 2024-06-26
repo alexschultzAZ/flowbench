@@ -9,13 +9,13 @@ import shutil
 import requests
 from minio import Minio
 from minio.error import InvalidResponseError
-from .facerec_handler1 import *
+from facerec_handler1 import *
 from datetime import datetime
 import ast
 
 MINIO_ADDRESS = "172.17.0.2:9000"
 minio_client = Minio(
-    MINIO_ADDRESS,
+    os.getenv('ENDPOINTINPUT'),
     access_key="minioadmin",
     secret_key="minioadmin",
     secure=False
@@ -54,6 +54,7 @@ def get_stdin():
 
 def load_from_local_storage(mount_path, input_dir, filename):
     # Check if the input directory exists
+    input_dir = os.path.join(mount_path, input_dir)
     if not os.path.exists(input_dir):
         return f"Directory '{input_dir}' does not exist.", False
     
@@ -67,6 +68,8 @@ def load_from_local_storage(mount_path, input_dir, filename):
     # Check if the file exists at the constructed file path
     if not os.path.isfile(file_path):
         return f"File '{filename}' does not exist in the directory '{input_dir}'.", False
+    
+    return file_path, True
     
     return file_path, True
 
@@ -133,3 +136,5 @@ def facerec_handler(req):
     response = {"bucketName" : output_bucket_name, "fileName" : files[0]}
     return response
 
+resp = facerec_handler({'bucketName': 'stage3', 'fileName': 'test_00-stage-2-2024-06-25-22-21-20-174820-tarunsunny.jpg'})
+print(resp)

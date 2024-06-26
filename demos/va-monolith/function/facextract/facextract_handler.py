@@ -5,12 +5,12 @@ import shutil
 from minio import Minio
 from minio.error import InvalidResponseError
 from datetime import datetime
-from .facextract_handler1 import *
+from facextract_handler1 import *
 import ast
 
 MINIO_ADDRESS = "172.17.0.2:9000"
 minio_client = Minio(
-    MINIO_ADDRESS,
+    os.getenv('ENDPOINTINPUT'),
     access_key="minioadmin",
     secret_key="minioadmin",
     secure=False
@@ -49,6 +49,7 @@ def get_stdin():
 
 def load_from_local_storage(mount_path, input_dir, filename):
     # Check if the input directory exists
+    input_dir = os.path.join(mount_path, input_dir)
     if not os.path.exists(input_dir):
         return f"Directory '{input_dir}' does not exist.", False
     
@@ -137,3 +138,7 @@ def facextract_handler(req):
         shutil.rmtree(outdir)
     response = {"bucketName" : output_bucket_name, "fileName" : files[0]}
     return response
+
+
+resp = facextract_handler({'bucketName': 'stage2', 'fileName': 'test_00-2-1-tarunsunny-2024-06-25-21-53-03-033892-0002.jpg'})
+print(resp)
