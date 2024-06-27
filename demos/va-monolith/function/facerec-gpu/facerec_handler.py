@@ -1,11 +1,16 @@
+# Copyright (c) Alex Ellis 2017. All rights reserved.
+# Copyright (c) OpenFaaS Author(s) 2018. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 import os
 import sys
 import time
 import shutil
+import requests
 from minio import Minio
 from minio.error import InvalidResponseError
+from facerec_handler1 import *
 from datetime import datetime
-from facextract_handler1 import *
 import ast
 
 MINIO_ADDRESS = "172.17.0.2:9000"
@@ -65,6 +70,8 @@ def load_from_local_storage(mount_path, input_dir, filename):
         return f"File '{filename}' does not exist in the directory '{input_dir}'.", False
     
     return file_path, True
+    
+    return file_path, True
 
 def store_to_local_storage(mount_path, dir_name, source_dir):
     files = os.listdir(source_dir)
@@ -82,23 +89,19 @@ def store_to_local_storage(mount_path, dir_name, source_dir):
         src_file = os.path.join(source_dir, file_name)
         dst_file = os.path.join(destination_dir, file_name)
         shutil.move(src_file, dst_file)
-
 # if __name__ == "__main__":
-def facextract_handler(req):
-    load_start = 0
-    load_end = 0
+def facerec_handler(req):
     files = []
 
     # st = get_stdin()
-    # bucket = st.split(' ')[0]
-    # file = st.split(' ')[1].rstrip("\n")
     # req = ast.literal_eval(req)
-    storage_mode = os.getenv('STORAGE_MODE')
-    mount_path = os.getenv('MOUNT_PATH')
-    output_bucket_name = os.getenv('OUTPUTBUCKET3')
     bucket = req["bucketName"]
     file = req["fileName"]
+    output_bucket_name = os.getenv('OUTPUTBUCKET4')
+    storage_mode = os.getenv('STORAGE_MODE')
+    mount_path = os.getenv('MOUNT_PATH')
     original_filename = file.split("-")[0]
+
 
     if 'local_storage' in storage_mode:
         response, isPresent = load_from_local_storage(mount_path=mount_path, input_dir=bucket, filename=file)
@@ -110,35 +113,28 @@ def facextract_handler(req):
             print(response)
             exit(1)
     else:
-
-        load_start = time.time()
+    
         new_file = load_from_minio(bucket, file)
-        load_end = time.time()
 
-    compute_start = time.time()
     face_fun = Face()
-    outdir = face_fun.handler_small(new_file, original_filename)
-    compute_end = time.time()
+    outdir, name = face_fun.handler_small(new_file, original_filename)
 
     if outdir != None and outdir != '':
         files = os.listdir(outdir)
         outputMode = os.getenv("OUTPUTMODE")
-
         if 'local_storage' in storage_mode:
             new_dir = output_bucket_name
             store_to_local_storage(mount_path=mount_path, dir_name=new_dir, source_dir=outdir)
-        
         if outputMode == 'obj':
             bucket = output_bucket_name
-            store_start = time.time()
             store_to_minio(bucket, outdir)
-            store_end = time.time()
+
+
     os.remove(new_file)
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
     response = {"bucketName" : output_bucket_name, "fileName" : files[0]}
     return response
 
-
-resp = facextract_handler({'bucketName': 'stage2', 'fileName': 'test_00-2-1-tarunsunny-2024-06-26-20-11-58-039203-0002.jpg'})
+resp = facerec_handler({'bucketName': 'stage3', 'fileName': 'test_00-stage-2-2024-06-26-20-13-06-299398-tarunsunny.jpg'})
 print(resp)

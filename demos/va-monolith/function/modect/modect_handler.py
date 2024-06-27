@@ -169,5 +169,5 @@ def modect_handler(req):
     response = {"bucketName" : output_bucket_name,"fileName" : files[0]}
     return response
 # test_00-stage-1-2024-06-25-21-53-03-372217.zip
-resp = modect_handler({'bucketName': 'stage1', 'fileName': 'test_00-stage-1-2024-06-25-21-53-03-372217.zip'})
+resp = modect_handler({'bucketName': 'stage1', 'fileName': 'test_00-stage-1-2024-06-26-20-11-58-380174.zip'})
 print(resp)
