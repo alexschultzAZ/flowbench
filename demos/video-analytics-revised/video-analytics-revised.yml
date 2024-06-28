@@ -18,7 +18,7 @@ functions:
       OUTPUTMODE: obj
       INPUTMODE: obj
       write_debug: true
-      STORAGE_TYPE: 'local'
+      STORAGE_TYPE: 'obj'
       MOUNT_PATH: '/mnt/local-storage'
       PVC_NAME: 'local-storage-claim'
    
@@ -36,6 +36,7 @@ functions:
       MODECT_MIN_AREA: 5
       MODECT_SKIP_RATE: 1
       write_debug: true
+      STORAGE_TYPE: 'obj'
 
   facextract:
     name: facextract
@@ -47,6 +48,7 @@ functions:
       OUTPUTMODE: obj
       OUTPUTBUCKET: stage3
       write_debug: true
+      STORAGE_TYPE: 'obj'
 
   facerec:
     name: facerec
@@ -58,3 +60,4 @@ functions:
       OUTPUTMODE: obj
       OUTPUTBUCKET: stage4
       write_debug: true
+      STORAGE_TYPE: 'obj'
