@@ -49,7 +49,7 @@ def solve(req, original_filename):
 
     ext = "jpg"
     quality = "1"
-    os.chdir("/home/tarun/Desktop/flowbench/flowbench-va-revised/flowbench/demos/va-monolith/function/vidsplit/tmp")
+    os.chdir("/home/app/function/vidsplit/tmp")
     split_cmd = './ffmpeg -i ' + req + ' -q:v ' + quality + \
                     ' -qmin 1 -qmax 1 ' + output_dir + '/' + \
                     original_filename+'-stage-' + str(stage) + '-' + os.uname()[1] + '-' + \
@@ -237,5 +237,5 @@ def vidsplit_handler(req):
     
 
 
-resp = vidsplit_handler("bucketName=stage0&fileName=test_00.mp4")
-print(resp)
+# resp = vidsplit_handler("bucketName=stage0&fileName=test_00.mp4")
+# print(resp)

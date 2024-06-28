@@ -5,7 +5,7 @@ import shutil
 from minio import Minio
 from minio.error import InvalidResponseError
 from datetime import datetime
-from facextract_handler1 import *
+from .facextract_handler1 import *
 import ast
 
 MINIO_ADDRESS = "172.17.0.2:9000"
@@ -140,5 +140,5 @@ def facextract_handler(req):
     return response
 
 
-resp = facextract_handler({'bucketName': 'stage2', 'fileName': 'test_00-2-1-tarunsunny-2024-06-26-20-11-58-039203-0002.jpg'})
-print(resp)
+# resp = facextract_handler({'bucketName': 'stage2', 'fileName': 'test_00-2-1-tarunsunny-2024-06-26-20-11-58-039203-0002.jpg'})
+# print(resp)

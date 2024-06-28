@@ -13,7 +13,7 @@ from minio import Minio
 import json
 from minio.error import InvalidResponseError
 from datetime import datetime
-from modect_handle import solve
+from .modect_handle import solve
 
 MINIO_ADDRESS = "172.17.0.2:9000"
 minio_client = Minio(
@@ -169,5 +169,5 @@ def modect_handler(req):
     response = {"bucketName" : output_bucket_name,"fileName" : files[0]}
     return response
 # test_00-stage-1-2024-06-25-21-53-03-372217.zip
-resp = modect_handler({'bucketName': 'stage1', 'fileName': 'test_00-stage-1-2024-06-26-20-11-58-380174.zip'})
-print(resp)
+# resp = modect_handler({'bucketName': 'stage1', 'fileName': 'test_00-stage-1-2024-06-26-20-11-58-380174.zip'})
+# print(resp)

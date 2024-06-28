@@ -66,7 +66,7 @@ class Face():
                     datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + os.uname()[1]
         # face = self.mtcnn.extract(img, np.array([[0, 0, img.size[0], img.size[1]]]), save_path=new_pic)
         face, prob = self.mtcnn(img, return_prob=True, save_path=None)
-        saved_data = torch.load('/home/tarun/Desktop/flowbench/flowbench-va-revised/flowbench/demos/va-monolith/function/facerec/tmp/data.pt')  # loading data.pt file
+        saved_data = torch.load('/home/app/function/facerec/tmp/data.pt')  # loading data.pt file
         if face != None:
             emb = self.resnet(face.unsqueeze(0)).detach()  # detech is to make required gradient false
             embedding_list = saved_data[0]  # getting embedding data

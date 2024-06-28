@@ -9,7 +9,7 @@ import shutil
 import requests
 from minio import Minio
 from minio.error import InvalidResponseError
-from facerec_handler1 import *
+from .facerec_handler1 import *
 from datetime import datetime
 import ast
 
