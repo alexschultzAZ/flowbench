@@ -1,7 +1,8 @@
 requests
 minio
 imutils
-numpy
-opencv-python-headless
-pillow
-facenet-pytorch
+prometheus-client
+# numpy
+# opencv-python-headless
+# pillow
+# # facenet-pytorch
