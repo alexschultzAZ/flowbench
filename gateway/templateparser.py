@@ -168,24 +168,23 @@ class WorkflowProcessor:
             print(f"Request failed for {entry_func} with status code: {response.status_code}")
 
     def process_workflow(self):
-        match self.workflow_logic:
-            case "pipeline":
-                print("pipeline")
-                self.handle_pipeline()
-            case "cron":
-                print("cron")
-                self.handle_cron()
-            case "one_to_many":
-                print("one-to-many")
-                self.handle_one_to_many()
-            case "many_to_one":
-                print("many-to-one")
-                self.handle_many_to_one()
-            case "branching":
-                print("branching")
-                self.handle_branching()
-            case _:
-                print("error")
+        if self.workflow_logic == "pipeline":
+            print("pipeline")
+            self.handle_pipeline()
+        elif self.workflow_logic == "cron":
+            print("cron")
+            self.handle_cron()
+        elif self.workflow_logic == "one_to_many":
+            print("one-to-many")
+            self.handle_one_to_many()
+        elif self.workflow_logic == "many_to_one":
+            print("many-to-one")
+            self.handle_many_to_one()
+        elif self.workflow_logic == "branching":
+            print("branching")
+            self.handle_branching()
+        else:
+            print("error")
     
     def build_and_deploy_functions(self):
         # Pass functions dict to the OpenFaaS build/deployment function
