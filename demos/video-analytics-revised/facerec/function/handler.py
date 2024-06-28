@@ -13,9 +13,9 @@ from .handler1 import *
 from datetime import datetime
 import ast
 
-MINIO_ADDRESS = "192.168.0.219:9000"
+
 minio_client = Minio(
-    MINIO_ADDRESS,
+    os.getenv('ENDPOINTINPUT'),
     access_key="minioadmin",
     secret_key="minioadmin",
     secure=False
@@ -52,6 +52,45 @@ def get_stdin():
             break
     return buf
 
+
+def load_from_local_storage(mount_path, input_dir, filename):
+    # Check if the input directory exists
+    input_dir = os.path.join(mount_path, input_dir)
+    if not os.path.exists(input_dir):
+        return f"Directory '{input_dir}' does not exist.", False
+    
+    # Check if the input directory is indeed a directory
+    if not os.path.isdir(input_dir):
+        return f"'{input_dir}' is not a directory.", False
+    
+    # Construct the full file path
+    file_path = os.path.join(mount_path, input_dir, filename)
+    
+    # Check if the file exists at the constructed file path
+    if not os.path.isfile(file_path):
+        return f"File '{filename}' does not exist in the directory '{input_dir}'.", False
+    
+    return file_path, True
+
+
+def store_to_local_storage(mount_path, dir_name, source_dir):
+    files = os.listdir(source_dir)
+    if len(files) == 0:
+        return
+    if not os.path.exists(mount_path):
+        os.makedirs(mount_path)
+            
+    destination_dir = os.path.join(mount_path, os.path.basename(dir_name))
+    if not os.path.exists(destination_dir):
+        os.makedirs(destination_dir)
+    
+    # Move files from outdir to destination_dir
+    for file_name in files:
+        src_file = os.path.join(source_dir, file_name)
+        dst_file = os.path.join(destination_dir, file_name)
+        shutil.move(src_file, dst_file)
+
+
 # if __name__ == "__main__":
 def handle(req):
     load_start = 0
@@ -62,25 +101,38 @@ def handle(req):
     req = ast.literal_eval(req)
     bucket = req["bucketName"]
     file = req["fileName"]
+    output_bucket_name = os.getenv('OUTPUTBUCKET4')
+    storage_mode = os.getenv('STORAGE_MODE')
+    mount_path = os.getenv('MOUNT_PATH')
     original_filename = file.split("-")[0]
 
-    load_start = time.time()
-    new_file = load_from_minio(bucket, file)
-    load_end = time.time()
 
-    compute_start = time.time()
+    if 'local_storage' in storage_mode:
+        response, isPresent = load_from_local_storage(mount_path=mount_path, input_dir=bucket, filename=file)
+                
+        if isPresent:
+            new_file = response
+        else:
+            print('No input file to read')
+            print(response)
+            exit(1)
+    else:
+    
+        new_file = load_from_minio(bucket, file)
+
     face_fun = Face()
     outdir, name = face_fun.handler_small(new_file, original_filename)
-    compute_end = time.time()
 
     if outdir != None and outdir != '':
         files = os.listdir(outdir)
         outputMode = os.getenv("OUTPUTMODE")
+        if 'local_storage' in storage_mode:
+            new_dir = output_bucket_name
+            store_to_local_storage(mount_path=mount_path, dir_name=new_dir, source_dir=outdir)
         if outputMode == 'obj':
-            bucket = os.getenv("OUTPUTBUCKET")
-            store_start = time.time()
+            bucket = output_bucket_name
             store_to_minio(bucket, outdir)
-            store_end = time.time()
+
 
     # connect to influxdb and log latency numbers
 

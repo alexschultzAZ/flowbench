@@ -36,6 +36,9 @@ functions:
       MODECT_MIN_AREA: 5
       MODECT_SKIP_RATE: 1
       write_debug: true
+      STORAGE_TYPE: 'local'
+      MOUNT_PATH: '/mnt/local-storage'
+      PVC_NAME: 'local-storage-claim'
 
   facextract:
     name: facextract
@@ -47,6 +50,9 @@ functions:
       OUTPUTMODE: obj
       OUTPUTBUCKET: stage3
       write_debug: true
+      STORAGE_TYPE: 'local'
+      MOUNT_PATH: '/mnt/local-storage'
+      PVC_NAME: 'local-storage-claim'
 
   facerec:
     name: facerec
@@ -58,3 +64,6 @@ functions:
       OUTPUTMODE: obj
       OUTPUTBUCKET: stage4
       write_debug: true
+      STORAGE_TYPE: 'local'
+      MOUNT_PATH: '/mnt/local-storage'
+      PVC_NAME: 'local-storage-claim'
