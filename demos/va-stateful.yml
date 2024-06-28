@@ -1,0 +1,87 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+functions:
+  va-stateful-vidsplit:
+    lang: python3-flask-debian
+    handler: ./va-stateful-vidsplit
+    image: raghavtiruvallur/va-stateful-vidsplit:latest
+    environment:
+      OUTPUTBUCKET: stage1
+      OUTPUTMODE: local
+      INPUTMODE: obj
+      write_debug: true
+      STORAGE_TYPE: local
+      MOUNT_PATH: /mnt/local-storage
+      PVC_NAME: 'local-storage-claim'
+  va-stateful-modect:
+    lang: python3-flask-debian
+    handler: ./va-stateful-modect
+    image: raghavtiruvallur/va-stateful-modect:latest
+    environment:
+      INPUTMODE: local
+      OUTPUTMODE: local
+      OUTPUTBUCKET: stage2
+      MOUNT_PATH: /mnt/local-storage
+      STORAGE_TYPE: local
+      PIPELINE_STAGE: 2
+      MODECT_MIN_AREA: 5
+      MODECT_SKIP_RATE: 1
+      PVC_NAME: local-storage-claim
+      write_debug: true
+  va-stateful-facextract:
+    lang: python3-flask-debian
+    handler: ./va-stateful-facextract
+    image: raghavtiruvallur/va-stateful-facextract:latest
+    environment:
+      INPUTMODE: local
+      OUTPUTMODE: local
+      OUTPUTBUCKET: stage3
+      MOUNT_PATH: /mnt/local-storage
+      STORAGE_TYPE: local
+      PVC_NAME: local-storage-claim
+      write_debug: true
+  va-stateful-facerec:
+    lang: python3-flask-debian
+    handler: ./va-stateful-facerec
+    image: raghavtiruvallur/va-stateful-facerec:latest
+    environment:
+      INPUTMODE: local
+      OUTPUTMODE: local
+      OUTPUTBUCKET: stage4
+      MOUNT_PATH: /mnt/local-storage
+      STORAGE_TYPE: local
+      PVC_NAME: local-storage-claim
+      write_debug: true
+  va-stateful-facerec:
+    lang: python3-flask-debian
+    handler: ./va-stateful-monolithic
+    image: raghavtiruvallur/va-stateful-monolithic:latest
+    environment:
+      INPUTMODE: local
+      OUTPUTMODE: local
+      OUTPUTBUCKET: stage4
+      MOUNT_PATH: /mnt/local-storage
+      STORAGE_TYPE: local
+      PVC_NAME: local-storage-claim
+      write_debug: true
+  va-stateful-monolithic:
+    lang: python3-flask-debian
+    handler: ./va-stateful-monolithic
+    image: raghavtiruvallur/va-stateful-monolithic:latest
+    environment:
+      INPUTMODE: local
+      OUTPUTMODE: local
+      OUTPUTBUCKET1: stage1
+      OUTPUTBUCKET2: stage2
+      OUTPUTBUCKET3: stage3
+      OUTPUTBUCKET4: stage4
+      MOUNT_PATH: /mnt/local-storage
+      STORAGE_TYPE: local
+      PVC_NAME: local-storage-claim
+      PIPELINE_STAGE: 2
+      MODECT_MIN_AREA: 5
+      MODECT_SKIP_RATE: 1
+      write_debug: true
+

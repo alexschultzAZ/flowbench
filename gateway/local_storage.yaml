@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: vidsplit
+  name: va-stateful-vidsplit
   namespace: openfaas-fn
 spec:
   replicas: 1
   selector:
     matchLabels:
-      faas_function: vidsplit
+      faas_function: va-stateful-vidsplit
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        faas_function: vidsplit
+        faas_function: va-stateful-vidsplit
     spec:
       containers:
       - env:
         - name: OUTPUTBUCKET
           value: stage1
         - name: OUTPUTMODE
-          value: obj
+          value: local
         - name: INPUTMODE
           value: obj
         - name: write_debug
@@ -31,7 +31,7 @@ spec:
           value: /mnt/local-storage
         - name: PVC_NAME
           value: local-storage-claim
-        image: harshitsharma48/vidsplit:latest
+        image: raghavtiruvallur/va-stateful-vidsplit:latest
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -42,7 +42,7 @@ spec:
           periodSeconds: 2
           successThreshold: 1
           timeoutSeconds: 1
-        name: vidsplit
+        name: va-stateful-vidsplit
         ports:
         - containerPort: 8080
           name: http
@@ -68,35 +68,43 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: modect
+  name: va-stateful-modect
   namespace: openfaas-fn
 spec:
   replicas: 1
   selector:
     matchLabels:
-      faas_function: modect
+      faas_function: va-stateful-modect
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        faas_function: modect
+        faas_function: va-stateful-modect
     spec:
       containers:
       - env:
         - name: INPUTMODE
-          value: obj
+          value: local
+        - name: OUTPUTMODE
+          value: local
         - name: OUTPUTBUCKET
           value: stage2
+        - name: MOUNT_PATH
+          value: /mnt/local-storage
+        - name: STORAGE_TYPE
+          value: local
         - name: PIPELINE_STAGE
           value: '2'
         - name: MODECT_MIN_AREA
           value: '5'
         - name: MODECT_SKIP_RATE
           value: '1'
+        - name: PVC_NAME
+          value: local-storage-claim
         - name: write_debug
           value: 'True'
-        image: harshitsharma48/modect:latest
+        image: raghavtiruvallur/va-stateful-modect:latest
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -107,7 +115,7 @@ spec:
           periodSeconds: 2
           successThreshold: 1
           timeoutSeconds: 1
-        name: modect
+        name: va-stateful-modect
         ports:
         - containerPort: 8080
           name: http
@@ -133,29 +141,37 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: facextract
+  name: va-stateful-facextract
   namespace: openfaas-fn
 spec:
   replicas: 1
   selector:
     matchLabels:
-      faas_function: facextract
+      faas_function: va-stateful-facextract
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        faas_function: facextract
+        faas_function: va-stateful-facextract
     spec:
       containers:
       - env:
+        - name: INPUTMODE
+          value: local
         - name: OUTPUTMODE
-          value: obj
+          value: local
         - name: OUTPUTBUCKET
           value: stage3
+        - name: MOUNT_PATH
+          value: /mnt/local-storage
+        - name: STORAGE_TYPE
+          value: local
+        - name: PVC_NAME
+          value: local-storage-claim
         - name: write_debug
           value: 'True'
-        image: harshitsharma48/facextract:latest
+        image: raghavtiruvallur/va-stateful-facextract:latest
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -166,7 +182,7 @@ spec:
           periodSeconds: 2
           successThreshold: 1
           timeoutSeconds: 1
-        name: facextract
+        name: va-stateful-facextract
         ports:
         - containerPort: 8080
           name: http
@@ -192,29 +208,37 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: facerec
+  name: va-stateful-facerec
   namespace: openfaas-fn
 spec:
   replicas: 1
   selector:
     matchLabels:
-      faas_function: facerec
+      faas_function: va-stateful-facerec
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        faas_function: facerec
+        faas_function: va-stateful-facerec
     spec:
       containers:
       - env:
+        - name: INPUTMODE
+          value: local
         - name: OUTPUTMODE
-          value: obj
+          value: local
         - name: OUTPUTBUCKET
           value: stage4
+        - name: MOUNT_PATH
+          value: /mnt/local-storage
+        - name: STORAGE_TYPE
+          value: local
+        - name: PVC_NAME
+          value: local-storage-claim
         - name: write_debug
           value: 'True'
-        image: harshitsharma48/facerec:latest
+        image: raghavtiruvallur/va-stateful-facerec:latest
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -225,7 +249,7 @@ spec:
           periodSeconds: 2
           successThreshold: 1
           timeoutSeconds: 1
-        name: facerec
+        name: va-stateful-facerec
         ports:
         - containerPort: 8080
           name: http

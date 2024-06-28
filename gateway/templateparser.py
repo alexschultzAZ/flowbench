@@ -39,7 +39,7 @@ class WorkflowProcessor:
         print("Execution order data is {}".format(self.execution_order))
 
     def handle_pipeline(self):
-        prevResponse = {"bucketName" : "stage0", "fileName" : "test_07.mp4"}
+        prevResponse = {"bucketName" : "stage0", "fileName" : "test_00.mp4"}
         for __, funcList in self.execution_order.items():
             # if(len(funcList) > 1):
             #     print("Pipeline workflow cannot have two or more functions at the same level")

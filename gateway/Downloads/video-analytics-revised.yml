@@ -7,54 +7,125 @@ workflow_logic:
 
 functions:
 
-  vidsplit:
-    name: vidsplit
-    lang: python3
-    handler: ../demos/video-analytics-revised/vidsplit
-    image: harshitsharma48/vidsplit:latest
+  # vidsplit:
+  #   name: vidsplit
+  #   lang: python3
+  #   handler: ../demos/video-analytics-revised/vidsplit
+  #   image: raghavtiruvallur/vidsplit:latest
+  #   order: 1
+  #   environment:
+  #     OUTPUTBUCKET: stage1
+  #     OUTPUTMODE: local
+  #     INPUTMODE: obj
+  #     write_debug: true
+  #     STORAGE_TYPE: local
+  #     MOUNT_PATH: '/mnt/local_storage'
+  #     PVC_NAME: 'local-storage-claim'
+   
+
+  # modect:
+  #   name: modect
+  #   lang: dockerfile
+  #   handler: ../demos/video-analytics-revised/modect
+  #   image: raghavtiruvallur/modect:latest
+  #   order: 2
+  #   environment:
+  #     INPUTMODE: local
+  #     OUTPUTMODE: local
+  #     OUTPUTBUCKET: stage2
+  #     MOUNT_PATH: '/mnt/local_storage'
+  #     STORAGE_TYPE: local
+  #     PIPELINE_STAGE: 2
+  #     MODECT_MIN_AREA: 5
+  #     MODECT_SKIP_RATE: 1
+  #     PVC_NAME: 'local-storage-claim'
+  #     write_debug: true
+
+  # facextract:
+  #   name: facextract
+  #   lang: dockerfile
+  #   handler: ../demos/video-analytics-revised/facextract
+  #   image: raghavtiruvallur/facextract:latest
+  #   order: 3
+  #   environment:
+  #     INPUTMODE: local
+  #     OUTPUTMODE: local
+  #     OUTPUTBUCKET: stage3
+  #     MOUNT_PATH: /mnt/local_storage
+  #     STORAGE_TYPE: local
+  #     PVC_NAME: 'local-storage-claim'
+  #     write_debug: true
+
+  # facerec:
+  #   name: facerec
+  #   lang: dockerfile
+  #   handler: ../demos/video-analytics-revised/facerec
+  #   image: raghavtiruvallur/facerec:latest
+  #   order: 4
+  #   environment:
+  #     INPUTMODE: local
+  #     OUTPUTMODE: local
+  #     OUTPUTBUCKET: stage4
+  #     MOUNT_PATH: /mnt/local_storage
+  #     STORAGE_TYPE: local
+  #     PVC_NAME: 'local-storage-claim'
+  #     write_debug: true
+  va-stateful-vidsplit:
+    name: va-stateful-vidsplit
+    lang: python3-flask-debian
+    handler: ../demos/va-stateful-vidsplit
+    image: raghavtiruvallur/va-stateful-vidsplit:latest
     order: 1
     environment:
       OUTPUTBUCKET: stage1
-      OUTPUTMODE: obj
+      OUTPUTMODE: local
       INPUTMODE: obj
       write_debug: true
-      STORAGE_TYPE: 'local'
-      MOUNT_PATH: '/mnt/local-storage'
+      STORAGE_TYPE: local
+      MOUNT_PATH: /mnt/local-storage
       PVC_NAME: 'local-storage-claim'
-   
-
-  modect:
-    name: modect
-    lang: dockerfile
-    handler: ../demos/video-analytics-revised/modect
-    image: harshitsharma48/modect:latest
+  va-stateful-modect:
+    name: va-stateful-modect
+    lang: python3-flask-debian
+    handler: ../demos/va-stateful-modect
+    image: raghavtiruvallur/va-stateful-modect:latest
     order: 2
     environment:
-      INPUTMODE: obj
+      INPUTMODE: local
+      OUTPUTMODE: local
       OUTPUTBUCKET: stage2
+      MOUNT_PATH: /mnt/local-storage
+      STORAGE_TYPE: local
       PIPELINE_STAGE: 2
       MODECT_MIN_AREA: 5
       MODECT_SKIP_RATE: 1
+      PVC_NAME: local-storage-claim
       write_debug: true
-
-  facextract:
-    name: facextract
-    lang: dockerfile
-    handler: ../demos/video-analytics-revised/facextract
-    image: harshitsharma48/facextract:latest
+  va-stateful-facextract:
+    name: va-stateful-facextract
+    lang: python3-flask-debian
+    handler: ../demos/va-stateful-facextract
+    image: raghavtiruvallur/va-stateful-facextract:latest
     order: 3
     environment:
-      OUTPUTMODE: obj
+      INPUTMODE: local
+      OUTPUTMODE: local
       OUTPUTBUCKET: stage3
+      MOUNT_PATH: /mnt/local-storage
+      STORAGE_TYPE: local
+      PVC_NAME: local-storage-claim
       write_debug: true
-
-  facerec:
-    name: facerec
-    lang: dockerfile
-    handler: ../demos/video-analytics-revised/facerec
-    image: harshitsharma48/facerec:latest
+  va-stateful-facerec:
+    name: vidsplit
+    lang: python3-flask-debian
+    handler: ../demos/va-stateful-facerec
+    image: raghavtiruvallur/va-stateful-facerec:latest
     order: 4
     environment:
-      OUTPUTMODE: obj
+      INPUTMODE: local
+      OUTPUTMODE: local
       OUTPUTBUCKET: stage4
+      MOUNT_PATH: /mnt/local-storage
+      STORAGE_TYPE: local
+      PVC_NAME: local-storage-claim
       write_debug: true

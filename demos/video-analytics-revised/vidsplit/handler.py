@@ -1,3 +1,4 @@
+import base64
 import os
 import sys
 import time
@@ -10,7 +11,7 @@ from zipfile import ZIP_STORED
 import subprocess
 import math
 
-MINIO_ADDRESS = "192.168.0.219:9000"
+MINIO_ADDRESS = "172.17.0.2:9000"
 minio_client = Minio(
     MINIO_ADDRESS,
     access_key="minioadmin",
@@ -122,23 +123,62 @@ def get_stdin():
             break
     return buf
 
+def load_from_local_storage(mount_path, input_dir, filename):
+
+    input_dir = os.path.join(mount_path, input_dir)
+    if not os.path.exists(input_dir):
+        return f"Directory '{input_dir}' does not exist.", False
+    
+    if not os.path.isdir(input_dir):
+        return f"'{input_dir}' is not a directory.", False
+    
+    file_path = os.path.join(mount_path, input_dir, filename)
+    
+    if not os.path.isfile(file_path):
+        return f"File '{filename}' does not exist in the directory '{input_dir}'.", False
+    
+    return file_path, True
+def store_to_local_storage(mount_path, dir_name, source_dir):
+    try:
+        files = os.listdir(source_dir)
+        if len(files) == 0:
+            return
+        if not os.path.exists(mount_path):
+            os.makedirs(mount_path)
+                
+        destination_dir = os.path.join(mount_path, os.path.basename(dir_name))
+        if not os.path.exists(destination_dir):
+            os.makedirs(destination_dir)
+        
+        for file_name in files:
+            src_file = os.path.join(source_dir, file_name)
+            dst_file = os.path.join(destination_dir, file_name)
+            shutil.move(src_file, dst_file)
+    except PermissionError as e:
+        print(f"PermissionError: {e}")
+    except FileNotFoundError as e:
+        print(f"FileNotFoundError: {e}")
+    except Exception as e:
+        print(f"Error: {e}")
+
 # if __name__ == "__main__":
 def handle(req):
     bucket = ''
     file = ''
     outdir = ''
-    inputMode = os.getenv("INPUTMODE")
+    storage_mode = os.getenv('STORAGE_TYPE')
+    mount_path = os.getenv('MOUNT_PATH')
+    outputBucket = os.getenv("OUTPUTBUCKET")
+    mn_fs = os.getenv("MN_FS")
     response = {}
     try:
-        if inputMode == 'http':
+        if storage_mode == 'http':
             file = os.getenv("Http_Referer")
             new_file = f"/tmp/{datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}-{file}"
             with open(new_file, "wb+") as f:
                 f.write(sys.stdin.buffer.read())
 
-            compute_start = time.time()
             outdir = solve(new_file, file.split(".")[0])
-            compute_end = time.time()
         else:
             # print("Enter")
             # st = get_stdin()
@@ -149,29 +189,46 @@ def handle(req):
             req = dict(item.split("=") for item in req.split("&"))
             bucket = req["bucketName"]
             file = req["fileName"]
-            #print(bucket,file)
-            load_start = time.time()
-            new_file = load_from_minio(bucket, file)
-            load_end = time.time()
+            if storage_mode == 'local':
+                response_msg, isPresent = load_from_local_storage(mount_path, bucket, file)
+                if isPresent:
+                    new_file = response_msg
+                    outdir = solve(new_file, file.split(".")[0])
+                else:
+                    print('No input file to read')
+                    print(response_msg)
+                    exit(1)
+            else: 
+                new_file = load_from_minio(bucket, file)
 
-            compute_start = time.time()
-            outdir = solve(new_file, file.split(".")[0])
-            #print(outdir)
-            compute_end = time.time()
+                outdir = solve(new_file, file.split(".")[0])
 
         if outdir:
             files = os.listdir(outdir)
-            outputMode = os.getenv("OUTPUTMODE")
-            if outputMode == 'obj':
-                bucket = os.getenv("OUTPUTBUCKET")
-                store_start = time.time()
-                store_to_minio(bucket, outdir)
-                store_end = time.time()
+            if mn_fs:
+                zip_file_path = os.path.join(outdir, files[0])
+                with open(zip_file_path, 'rb') as zip_file:
+                    zip_content = zip_file.read()
+                
+                zip_base64 = base64.b64encode(zip_content).decode('utf-8')
+                return {
+                    "statusCode": 200,
+                    "body": zip_base64,
+                    "headers": {
+                        "Content-Type": "application/zip",
+                        "Content-Disposition": f"attachment; filename={files[0]}",
+                        "Content-Transfer-Encoding": "base64"
+                    }
+                }
+            if storage_mode == 'obj':
+                store_to_minio(outputBucket, outdir)
+            else:
+                store_to_local_storage(mount_path, outputBucket, outdir)
 
         os.remove(new_file)
         if os.path.exists(outdir):
             shutil.rmtree(outdir)
     except Exception as e:
         response.update({"exception": str(e)})
-    response = {"bucketName" : os.getenv("OUTPUTBUCKET"), "fileName" : files[0]}
+    response = {"bucketName" : outputBucket, "fileName" : files[0]}
     return response
