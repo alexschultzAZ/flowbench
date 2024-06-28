@@ -1,0 +1,29 @@
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+
+workflow_logic:
+  name: pipeline
+
+functions:
+
+  function:
+    name: function
+    lang: dockerfile
+    handler: ./function
+    image: flowbench2024/function:latest
+    order: 1
+    environment:
+      ENDPOINTINPUT: 172.17.0.2:9000
+      OUTPUTBUCKET1: stage1
+      OUTPUTBUCKET2: stage2
+      OUTPUTBUCKET3: stage3
+      OUTPUTBUCKET4: stage4
+      PIPELINE_STAGE: 2
+      MODECT_MIN_AREA: 5
+      MODECT_SKIP_RATE: 1
+      STORAGE_TYPE: local_storage
+      MOUNT_PATH: /home/users/harshit/project/local-storage
+      INPUTMODE: obj
+      write_debug: true
+      PVC_NAME: 'local-storage-claim'
