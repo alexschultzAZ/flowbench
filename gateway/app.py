@@ -21,7 +21,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 500 * 1000 * 100  # 50 MB
 app.config['CORS_HEADER'] = 'application/json'
 
-minio_client = Minio("127.0.0.1:9000",    
+minio_client = Minio("10.107.30.115:9000",    
         access_key="minioadmin",
         secret_key="minioadmin",
 	    secure=False
