@@ -23,7 +23,7 @@ RUN chown -R app /home/app && \
 USER app
 ENV PATH=$PATH:/home/app/.local/bin:/home/app/python/bin/
 ENV PYTHONPATH=$PYTHONPATH:/home/app/python
-ENV ENDPOINTINPUT=172.0.
+ENV ENDPOINTINPUT=172.17.0.2:9000
 ENV OUTPUTBUCKET1=stage1
 ENV OUTPUTBUCKET2=stage2
 ENV OUTPUTBUCKET3=stage3
@@ -32,7 +32,7 @@ ENV PIPELINE_STAGE=2
 ENV MODECT_MIN_AREA=5
 ENV MODECT_SKIP_RATE=1
 ENV STORAGE_TYPE=local_storage
-ENV MOUNT_PATH=/mnt/local-storage
+ENV MOUNT_PATH=/home/users/harshit/project/local-storage
 RUN pip install -r requirements.txt --target=/home/app/python
 
 RUN mkdir -p function

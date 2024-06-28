@@ -5,10 +5,10 @@ metadata:
   namespace: openfaas-fn
 spec:
   capacity:
-    storage: 10Gi
+    storage: 100Mi
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: /home/tarun/Desktop/local-storage
+    path: /home/users/harshit/project/local-storage
   persistentVolumeReclaimPolicy: Retain
   storageClassName: microk8s-hostpath-immediate
