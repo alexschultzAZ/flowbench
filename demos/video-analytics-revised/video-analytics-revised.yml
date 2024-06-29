@@ -51,7 +51,7 @@ functions:
     name: facerec
     lang: dockerfile
     handler: ../demos/video-analytics-revised/facerec
-    image: raghavtiruvallur/facerec:latest
+    image: flowbench2024/facerec:latest
     order: 4
     environment:
       OUTPUTBUCKET: stage4
