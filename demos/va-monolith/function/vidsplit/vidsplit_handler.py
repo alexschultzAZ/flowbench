@@ -10,9 +10,9 @@ from zipfile import ZIP_STORED
 import subprocess
 import math
 
-MINIO_ADDRESS = "172.17.0.2:9000"
+MINIO_ENDPOINT = os.getenv('ENDPOINTINPUT')
 minio_client = Minio(
-    os.getenv('ENDPOINTINPUT'),
+    MINIO_ENDPOINT,
     access_key="minioadmin",
     secret_key="minioadmin",
     secure=False
@@ -49,7 +49,7 @@ def solve(req, original_filename):
 
     ext = "jpg"
     quality = "1"
-    os.chdir("/home/tarun/Desktop/flowbench/flowbench-va-revised/flowbench/demos/va-monolith/function/vidsplit/tmp")
+    os.chdir("/home/app/function/vidsplit/tmp")
     split_cmd = './ffmpeg -i ' + req + ' -q:v ' + quality + \
                     ' -qmin 1 -qmax 1 ' + output_dir + '/' + \
                     original_filename+'-stage-' + str(stage) + '-' + os.uname()[1] + '-' + \
@@ -163,13 +163,6 @@ def store_to_local_storage(mount_path, dir_name, source_dir):
 
 # if __name__ == "__main__":
 
-"""
-
-STORAGE_TYPE: 'local'
-MOUNT_PATH: '/mnt/local-storage'
-PVC_NAME: 'local-storage-claim'
-
-"""
 def vidsplit_handler(req):
     bucket = ''
     file = ''
@@ -178,7 +171,8 @@ def vidsplit_handler(req):
     storage_mode = os.getenv('STORAGE_TYPE')
     mount_path = os.getenv('MOUNT_PATH')
     output_bucket_name = os.getenv('OUTPUTBUCKET1')
-    fileName = ''
+    outputMode = os.getenv("OUTPUTMODE")
+    storage_mode = os.getenv("STORAGE_TYPE")
     response = {}
     # files =[]
     try:
@@ -210,18 +204,13 @@ def vidsplit_handler(req):
 
         if outdir:
             files = os.listdir(outdir)
-
-            outputMode = os.getenv("OUTPUTMODE")
-            if outputMode == 'obj':
+            if storage_mode == 'obj':
                 bucket = output_bucket_name
                 store_start = time.time()
                 store_to_minio(bucket, outdir)
                 store_end = time.time()
                 
-            if 'local_storage' in storage_mode:
-                # write to local storage
-                #output dir contains the files?
-
+            elif storage_mode == 'local':
                 new_dir = output_bucket_name
                 store_to_local_storage(mount_path=mount_path, dir_name=new_dir, source_dir=outdir)
 
@@ -235,7 +224,3 @@ def vidsplit_handler(req):
     response = {"bucketName" : output_bucket_name, "fileName" : files[0]}
     return response
     
-
-
-resp = vidsplit_handler("bucketName=stage0&fileName=test_00.mp4")
-print(resp)

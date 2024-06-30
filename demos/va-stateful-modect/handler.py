@@ -1,8 +1,10 @@
+import base64
 import os
 import sys
 import time
 import shutil
 import ast
+import requests
 from minio import Minio
 import json
 from minio.error import InvalidResponseError
@@ -86,6 +88,11 @@ def load_from_local_storage(mount_path, input_dir, filename):
         return f"File '{filename}' does not exist in the directory '{input_dir}'.", False
     return file_path,True
 
+def string_to_bool(value):
+    try:
+        return ast.literal_eval(value.capitalize())
+    except (ValueError, SyntaxError):
+        return False
 
 def handle(req):
     request_start_ts = str(round(time.time() * 1000000000))
@@ -106,6 +113,8 @@ def handle(req):
     mount_path = os.getenv("MOUNT_PATH")
     outputMode = os.getenv("OUTPUTMODE")
     storageMode = os.getenv("STORAGE_TYPE")
+    mn_fs = os.getenv("MN_FS")
+    mn_fs = string_to_bool(mn_fs)
     if storageMode == 'http':
         file = os.getenv("Http_Referer")
         new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
@@ -121,28 +130,59 @@ def handle(req):
         # st = get_stdin()
         # bucket = st.split(' ')[0]
         # file = st.split(' ')[1].rstrip("\n")
-        reqJSON = ast.literal_eval(req)
+        #reqJSON = ast.literal_eval(req)
+        
         #req = dict(item.split("=") for item in req.split("&"))
-        bucket = reqJSON["bucketName"]
-        file =  reqJSON["fileName"]
-        if storageMode == 'obj':
-            new_file = load_from_minio(bucket, file)
-
-            original_filename = file.split("-")[0]
+        if mn_fs:
+            # print(type(reqJSON))
+            #reqJSON = dict(item.split("=") for item in req.split("&"))
+            reqJSON = ast.literal_eval(req)
+            decodedFile = base64.b64decode(reqJSON["body"])
+            file = reqJSON["headers"]["Content-Disposition"].split(";")[1].split("=")[1]
+            new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
+            with open(new_file,"wb") as zipfile:
+                zipfile.write(decodedFile)
             outdir = solve(new_file)
         else:
-            response_msg, isPresent = load_from_local_storage(mount_path, bucket, file)
-            if isPresent:
-                new_file = response_msg
-                outdir = solve(response_msg)
+            reqJSON = ast.literal_eval(req)
+            bucket = reqJSON["bucketName"]
+            file =  reqJSON["fileName"]
+            if storageMode == 'obj':
+                new_file = load_from_minio(bucket, file)
+
+                original_filename = file.split("-")[0]
+                outdir = solve(new_file)
             else:
-                print('No input file to read')
-                print(response_msg)
-                exit(1)
+                response_msg, isPresent = load_from_local_storage(mount_path, bucket, file)
+                if isPresent:
+                    new_file = response_msg
+                    outdir = solve(response_msg)
+                else:
+                    print('No input file to read')
+                    print(response_msg)
+                    exit(1)
 
     if outdir != None and outdir != '':
         files = os.listdir(outdir)
-
+        if mn_fs:
+            image_path = os.path.join(outdir,files[0])
+            with open(image_path, "rb") as image_file:
+                image_data = image_file.read()
+            image_base64 = base64.b64encode(image_data).decode('utf-8')
+            request_body = {
+                "body": image_base64,
+                "headers": {
+                    "Content-Type": "image/jpeg",
+                    "Content-Disposition": f"attachment; filename={files[0]}",
+                    "Content-Transfer-Encoding": "base64"
+                }
+            } 
+            response = requests.post("http://gateway.openfaas:8080/function/va-stateful-facextract",json = request_body)
+            if response.status_code == 200:
+                return {
+                    "statusCode" : 200,
+                    "body" : "Success"
+                }
         if storageMode == 'obj':
             store_to_minio(outputBucket, outdir)
         else:

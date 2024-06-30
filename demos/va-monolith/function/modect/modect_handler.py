@@ -13,11 +13,11 @@ from minio import Minio
 import json
 from minio.error import InvalidResponseError
 from datetime import datetime
-from modect_handle import solve
+from .modect_handle import solve
 
-MINIO_ADDRESS = "172.17.0.2:9000"
+MINIO_ENDPOINT = os.getenv('ENDPOINTINPUT')
 minio_client = Minio(
-    os.getenv('ENDPOINTINPUT'),
+    MINIO_ENDPOINT,
     access_key="minioadmin",
     secret_key="minioadmin",
     secure=False
@@ -105,7 +105,7 @@ def modect_handler(req):
     outdir = ''
 
     inputMode = os.getenv('INPUTMODE')
-    storage_mode = os.getenv('STORAGE_MODE')
+    storage_mode = os.getenv('STORAGE_TYPE')
     mount_path = os.getenv('MOUNT_PATH')
     output_bucket_name = os.getenv("OUTPUTBUCKET2")
     if inputMode == 'http':
@@ -128,7 +128,7 @@ def modect_handler(req):
         bucket = reqJSON["bucketName"]
         file =  reqJSON["fileName"]
         
-        if 'local_storage' in storage_mode:
+        if storage_mode == 'local':
             response, isPresent = load_from_local_storage(mount_path=mount_path, input_dir=bucket, filename=file)
                 
             if isPresent:
@@ -151,13 +151,12 @@ def modect_handler(req):
 
     if outdir != None and outdir != '':
         files = os.listdir(outdir)
-        outputMode = 'obj'
 
-        if 'local_storage' in storage_mode:
+        if storage_mode == 'local':
             new_dir = output_bucket_name
             store_to_local_storage(mount_path=mount_path, dir_name=new_dir, source_dir=outdir)
 
-        if outputMode == 'obj':
+        elif storage_mode == 'obj':
             bucket = output_bucket_name
             store_start = time.time()
             store_to_minio(bucket, outdir)
@@ -168,6 +167,3 @@ def modect_handler(req):
         shutil.rmtree(outdir)
     response = {"bucketName" : output_bucket_name,"fileName" : files[0]}
     return response
-# test_00-stage-1-2024-06-25-21-53-03-372217.zip
-resp = modect_handler({'bucketName': 'stage1', 'fileName': 'test_00-stage-1-2024-06-25-21-53-03-372217.zip'})
-print(resp)

@@ -2,6 +2,7 @@
 # Copyright (c) OpenFaaS Author(s) 2018. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+import base64
 import os
 import sys
 import time
@@ -89,6 +90,11 @@ def load_from_local_storage(mount_path, input_dir, filename):
     if not os.path.isfile(file_path):
         return f"File '{filename}' does not exist in the directory '{input_dir}'.", False
     return file_path,True
+def string_to_bool(value):
+    try:
+        return ast.literal_eval(value.capitalize())
+    except (ValueError, SyntaxError):
+        return False
 # if __name__ == "__main__":
 def handle(req):
     load_start = 0
@@ -96,34 +102,57 @@ def handle(req):
     files = []
 
     # st = get_stdin()
-    req = ast.literal_eval(req)
-    bucket = req["bucketName"]
-    file = req["fileName"]
+    mn_fs = os.getenv("MN_FS")
+    mn_fs = string_to_bool(mn_fs)
     outputBucket = os.getenv("OUTPUTBUCKET")
     inputMode = os.getenv("INPUTMODE")
     outputMode = os.getenv("OUTPUTMODE")
     storageMode = os.getenv("STORAGE_TYPE")
-    
-    original_filename = file.split("-")[0]
-
-    if storageMode == 'obj':
-        new_file = load_from_minio(bucket, file)
+    req = ast.literal_eval(req)
+    if mn_fs:
+        image_data = base64.b64decode(req["body"])
+        file = req["headers"]["Content-Disposition"].split(";")[1].split("=")[1]
+        new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
+        with open(new_file,"wb") as image_file:
+            image_file.write(image_data)
+        original_filename = file.split("-")[0]
     else:
-        mountPath = os.getenv("MOUNT_PATH")
-        response, isPresent = load_from_local_storage(mountPath,bucket,file)
-        if isPresent:
-            new_file = response
+        bucket = req["bucketName"]
+        file = req["fileName"]
+        original_filename = file.split("-")[0]
+        if storageMode == 'obj':
+            new_file = load_from_minio(bucket, file)
         else:
-            print('No input file to read')
-            print(response)
-            exit(1)
+            mountPath = os.getenv("MOUNT_PATH")
+            response, isPresent = load_from_local_storage(mountPath,bucket,file)
+            if isPresent:
+                new_file = response
+            else:
+                print('No input file to read')
+                print(response)
+                exit(1)
 
     face_fun = Face()
     outdir, name = face_fun.handler_small(new_file, original_filename)
 
     if outdir != None and outdir != '':
         files = os.listdir(outdir)
-       
+        if mn_fs:
+            file_path = os.path.join(outdir,files[0])
+            new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
+            file_content = ''
+            with open(file_path, "r") as text_file:
+                file_content = text_file.read()
+            with open(new_file,"w") as dest_file:
+                dest_file.write(file_content)
+            return {
+                "body": f"Written to file {files[0]}",
+                "headers": {
+                    "Content-Type": "image/text",
+                    "Content-Disposition": f"attachment; filename={files[0]}",
+                    "Content-Transfer-Encoding": "base64"
+                }
+            } 
         if storageMode == 'obj':
             store_to_minio(outputBucket, outdir)
         else:

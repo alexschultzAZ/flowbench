@@ -90,6 +90,11 @@ def load_from_local_storage(mount_path, input_dir, filename):
     if not os.path.isfile(file_path):
         return f"File '{filename}' does not exist in the directory '{input_dir}'.", False
     return file_path,True
+def string_to_bool(value):
+    try:
+        return ast.literal_eval(value.capitalize())
+    except (ValueError, SyntaxError):
+        return False
 # if __name__ == "__main__":
 def handle(req):
     load_start = 0
@@ -99,6 +104,7 @@ def handle(req):
     # st = get_stdin()
     req = ast.literal_eval(req)
     mn_fs = os.getenv("MN_FS")
+    mn_fs = string_to_bool(mn_fs)
     if mn_fs:
         image_data = base64.b64decode(req["body"])
         file = req["headers"]["Content-Disposition"].split(";")[1].split("=")[1]

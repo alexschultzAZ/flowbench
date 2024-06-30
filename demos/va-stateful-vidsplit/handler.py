@@ -1,3 +1,4 @@
+import base64
 import os
 import sys
 import time
@@ -8,6 +9,8 @@ from datetime import datetime
 from zipfile import ZipFile
 from zipfile import ZIP_STORED
 import subprocess
+import requests
+import ast
 import math
 
 MINIO_ADDRESS = "172.17.0.2:9000"
@@ -160,6 +163,11 @@ def store_to_local_storage(mount_path, dir_name, source_dir):
     except Exception as e:
         print(f"Error: {e}")
 
+def string_to_bool(value):
+    try:
+        return ast.literal_eval(value.capitalize())
+    except (ValueError, SyntaxError):
+        return False
 # if __name__ == "__main__":
 def handle(req):
     bucket = ''
@@ -168,6 +176,8 @@ def handle(req):
     storage_mode = os.getenv('STORAGE_TYPE')
     mount_path = os.getenv('MOUNT_PATH')
     outputBucket = os.getenv("OUTPUTBUCKET")
+    mn_fs = os.getenv("MN_FS")
+    mn_fs = string_to_bool(mn_fs)
     files = []
     response = {}
     try:
@@ -198,6 +208,26 @@ def handle(req):
 
         if outdir:
             files = os.listdir(outdir)
+            if mn_fs:
+                zip_file_path = os.path.join(outdir, files[0])
+                with open(zip_file_path, 'rb') as zip_file:
+                    zip_content = zip_file.read()
+                
+                zip_base64 = base64.b64encode(zip_content).decode('utf-8')
+                fileBody = {
+                    "body": zip_base64,
+                    "headers": {
+                        "Content-Type": "application/zip",
+                        "Content-Disposition": f"attachment; filename={files[0]}",
+                        "Content-Transfer-Encoding": "base64"
+                    }
+                }
+                result = requests.post("http://gateway.openfaas:8080/function/va-stateful-modect",json = fileBody)
+                if result.status_code == 200:
+                    return {
+                        "statusCode" : 200,
+                        "body" : "Success"
+                    }
             if storage_mode == 'obj':
                 store_to_minio(outputBucket, outdir)
             else:

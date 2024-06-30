@@ -9,6 +9,7 @@ from datetime import datetime
 from zipfile import ZipFile
 from zipfile import ZIP_STORED
 import subprocess
+import ast
 import math
 
 MINIO_ADDRESS = "172.17.0.2:9000"
@@ -160,7 +161,11 @@ def store_to_local_storage(mount_path, dir_name, source_dir):
         print(f"FileNotFoundError: {e}")
     except Exception as e:
         print(f"Error: {e}")
-
+def string_to_bool(value):
+    try:
+        return ast.literal_eval(value.capitalize())
+    except (ValueError, SyntaxError):
+        return False
 # if __name__ == "__main__":
 def handle(req):
     bucket = ''
@@ -170,6 +175,7 @@ def handle(req):
     mount_path = os.getenv('MOUNT_PATH')
     outputBucket = os.getenv("OUTPUTBUCKET")
     mn_fs = os.getenv("MN_FS")
+    mn_fs = string_to_bool(mn_fs)
     response = {}
     try:
         if storage_mode == 'http':

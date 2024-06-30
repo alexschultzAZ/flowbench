@@ -85,6 +85,11 @@ def store_to_local_storage(mount_path, dir_name, source_dir):
     except Exception as e:
         print(f"Error: {e}")
 
+def string_to_bool(value):
+    try:
+        return ast.literal_eval(value.capitalize())
+    except (ValueError, SyntaxError):
+        return False
 # if __name__ == "__main__":
 def handle(req):
     files = []
@@ -93,6 +98,7 @@ def handle(req):
     outputBucket = os.getenv("OUTPUTBUCKET")
     storageMode = os.getenv("STORAGE_TYPE")
     mn_fs = os.getenv("MN_FS")
+    mn_fs = string_to_bool(mn_fs)
     req = ast.literal_eval(req)
     if mn_fs:
         image_data = base64.b64decode(req["body"])

@@ -31,6 +31,8 @@ spec:
           value: /mnt/local-storage
         - name: PVC_NAME
           value: local-storage-claim
+        - name: MN_FS
+          value: 'True'
         image: raghavtiruvallur/va-stateful-vidsplit:latest
         livenessProbe:
           failureThreshold: 3
@@ -102,6 +104,8 @@ spec:
           value: '1'
         - name: PVC_NAME
           value: local-storage-claim
+        - name: MN_FS
+          value: 'True'
         - name: write_debug
           value: 'True'
         image: raghavtiruvallur/va-stateful-modect:latest
@@ -169,6 +173,8 @@ spec:
           value: local
         - name: PVC_NAME
           value: local-storage-claim
+        - name: MN_FS
+          value: 'True'
         - name: write_debug
           value: 'True'
         image: raghavtiruvallur/va-stateful-facextract:latest
@@ -236,6 +242,8 @@ spec:
           value: local
         - name: PVC_NAME
           value: local-storage-claim
+        - name: MN_FS
+          value: 'True'
         - name: write_debug
           value: 'True'
         image: raghavtiruvallur/va-stateful-facerec:latest

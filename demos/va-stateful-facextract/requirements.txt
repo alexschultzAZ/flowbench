@@ -1,3 +1,4 @@
+requests
 opencv-python-headless
 minio
 imutils

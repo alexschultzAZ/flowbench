@@ -87,7 +87,11 @@ def load_from_local_storage(mount_path, input_dir, filename):
         return f"File '{filename}' does not exist in the directory '{input_dir}'.", False
     return file_path,True
 
-
+def string_to_bool(value):
+    try:
+        return ast.literal_eval(value.capitalize())
+    except (ValueError, SyntaxError):
+        return False
 def handle(req):
     request_start_ts = str(round(time.time() * 1000000000))
     compute_start = 0
@@ -108,6 +112,7 @@ def handle(req):
     outputMode = os.getenv("OUTPUTMODE")
     storageMode = os.getenv("STORAGE_TYPE")
     mn_fs = os.getenv("MN_FS")
+    mn_fs = string_to_bool(mn_fs)
     if storageMode == 'http':
         file = os.getenv("Http_Referer")
         new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file

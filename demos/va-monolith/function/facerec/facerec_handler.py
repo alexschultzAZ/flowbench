@@ -9,13 +9,13 @@ import shutil
 import requests
 from minio import Minio
 from minio.error import InvalidResponseError
-from facerec_handler1 import *
+from .facerec_handler1 import *
 from datetime import datetime
 import ast
 
-MINIO_ADDRESS = "172.17.0.2:9000"
+MINIO_ENDPOINT = os.getenv('ENDPOINTINPUT')
 minio_client = Minio(
-    os.getenv('ENDPOINTINPUT'),
+    MINIO_ENDPOINT,
     access_key="minioadmin",
     secret_key="minioadmin",
     secure=False
@@ -71,8 +71,6 @@ def load_from_local_storage(mount_path, input_dir, filename):
     
     return file_path, True
     
-    return file_path, True
-
 def store_to_local_storage(mount_path, dir_name, source_dir):
     files = os.listdir(source_dir)
     if len(files) == 0:
@@ -98,12 +96,13 @@ def facerec_handler(req):
     bucket = req["bucketName"]
     file = req["fileName"]
     output_bucket_name = os.getenv('OUTPUTBUCKET4')
-    storage_mode = os.getenv('STORAGE_MODE')
+    storage_mode = os.getenv('STORAGE_TYPE')
     mount_path = os.getenv('MOUNT_PATH')
+    outputMode = os.getenv("OUTPUTMODE")
     original_filename = file.split("-")[0]
 
 
-    if 'local_storage' in storage_mode:
+    if  storage_mode == 'local':
         response, isPresent = load_from_local_storage(mount_path=mount_path, input_dir=bucket, filename=file)
                 
         if isPresent:
@@ -113,7 +112,6 @@ def facerec_handler(req):
             print(response)
             exit(1)
     else:
-    
         new_file = load_from_minio(bucket, file)
 
     face_fun = Face()
@@ -121,11 +119,10 @@ def facerec_handler(req):
 
     if outdir != None and outdir != '':
         files = os.listdir(outdir)
-        outputMode = os.getenv("OUTPUTMODE")
-        if 'local_storage' in storage_mode:
+        if storage_mode == 'local':
             new_dir = output_bucket_name
             store_to_local_storage(mount_path=mount_path, dir_name=new_dir, source_dir=outdir)
-        if outputMode == 'obj':
+        elif storage_mode == 'obj':
             bucket = output_bucket_name
             store_to_minio(bucket, outdir)
 
@@ -135,6 +132,3 @@ def facerec_handler(req):
         shutil.rmtree(outdir)
     response = {"bucketName" : output_bucket_name, "fileName" : files[0]}
     return response
-
-resp = facerec_handler({'bucketName': 'stage3', 'fileName': 'test_00-stage-2-2024-06-25-22-21-20-174820-tarunsunny.jpg'})
-print(resp)

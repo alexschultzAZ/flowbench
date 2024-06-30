@@ -1,3 +1,4 @@
+import base64
 import os
 import sys
 import time
@@ -5,6 +6,8 @@ import shutil
 from minio import Minio
 from minio.error import InvalidResponseError
 from datetime import datetime
+
+import requests
 from .handler1 import *
 import ast
 
@@ -83,7 +86,11 @@ def store_to_local_storage(mount_path, dir_name, source_dir):
         print(f"FileNotFoundError: {e}")
     except Exception as e:
         print(f"Error: {e}")
-
+def string_to_bool(value):
+    try:
+        return ast.literal_eval(value.capitalize())
+    except (ValueError, SyntaxError):
+        return False
 # if __name__ == "__main__":
 def handle(req):
     files = []
@@ -91,28 +98,57 @@ def handle(req):
     outputMode = os.getenv("OUTPUTMODE")
     outputBucket = os.getenv("OUTPUTBUCKET")
     storageMode = os.getenv("STORAGE_TYPE")
-
+    mn_fs = os.getenv("MN_FS")
+    mn_fs = string_to_bool(mn_fs)
     req = ast.literal_eval(req)
-    bucket = req["bucketName"]
-    file = req["fileName"]
-    original_filename = file.split("-")[0]
-    if storageMode == 'obj':
-        new_file = load_from_minio(bucket, file)
+    if mn_fs:
+        image_data = base64.b64decode(req["body"])
+        file = req["headers"]["Content-Disposition"].split(";")[1].split("=")[1]
+        new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
+        with open(new_file,"wb") as image_file:
+            image_file.write(image_data)
+        original_filename = file.split("-")[0]
     else:
-        mountPath = os.getenv("MOUNT_PATH")
-        response_msg, isPresent = load_from_local_storage(mountPath, bucket, file)
-        if isPresent:
-            new_file = response_msg
+        bucket = req["bucketName"]
+        file = req["fileName"]
+        original_filename = file.split("-")[0]
+        if storageMode == 'obj':
+            new_file = load_from_minio(bucket, file)
         else:
-            print('No input file to read')
-            print(response_msg)
-            exit(1)
+            mountPath = os.getenv("MOUNT_PATH")
+            response_msg, isPresent = load_from_local_storage(mountPath, bucket, file)
+            if isPresent:
+                new_file = response_msg
+            else:
+                print('No input file to read')
+                print(response_msg)
+                exit(1)
 
     face_fun = Face()
     outdir = face_fun.handler_small(new_file, original_filename)
 
     if outdir != None and outdir != '':
         files = os.listdir(outdir)
+        if mn_fs:
+            image_path = os.path.join(outdir,files[0])
+            with open(image_path, "rb") as image_file:
+                image_data = image_file.read()
+            image_base64 = base64.b64encode(image_data).decode('utf-8')
+            fileBody = {
+                "body": image_base64,
+                "headers": {
+                    "Content-Type": "image/jpeg",
+                    "Content-Disposition": f"attachment; filename={files[0]}",
+                    "Content-Transfer-Encoding": "base64"
+                }
+            } 
+            response = requests.post("http://gateway.openfaas:8080/function/va-stateful-facerec",json = fileBody)
+            print(response.text)
+            if response.status_code == 200:
+                return {
+                    "statusCode": 200,
+                    "body" : "Success"
+                }
         if storageMode == 'obj':
             store_to_minio(outputBucket, outdir)
         else:
