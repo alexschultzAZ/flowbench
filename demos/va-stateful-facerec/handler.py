@@ -110,6 +110,7 @@ def handle(req):
     outputMode = os.getenv("OUTPUTMODE")
     storageMode = os.getenv("STORAGE_TYPE")
     funcName = "stateful_facerec"
+    recvTime = 0
     pushGateway = os.getenv("PUSHGATEWAY_IP")
     registry = CollectorRegistry()
     download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
@@ -117,6 +118,7 @@ def handle(req):
     computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
     req = ast.literal_eval(req)
     if mn_fs:
+        recvTime = time.time()
         load_start = time.time()
         image_data = base64.b64decode(req["body"])
         file = req["headers"]["Content-Disposition"].split(";")[1].split("=")[1]
@@ -161,6 +163,7 @@ def handle(req):
             upload_time_gauge.set(store_end - store_start)
             push_to_gateway(pushGateway, job=funcName, registry=registry)
             return {
+                "recvTime" : recvTime,
                 "body": f"Written to file {files[0]}",
                 "headers": {
                     "Content-Type": "image/text",

@@ -1,4 +1,5 @@
 import base64
+import json
 import os
 import sys
 import time
@@ -99,6 +100,7 @@ def handle(req):
     outputMode = os.getenv("OUTPUTMODE")
     outputBucket = os.getenv("OUTPUTBUCKET")
     storageMode = os.getenv("STORAGE_TYPE")
+    recvTime = 0
     funcName = "stateful_facextract"
     pushGateway = os.getenv("PUSHGATEWAY_IP")
     registry = CollectorRegistry()
@@ -109,6 +111,7 @@ def handle(req):
     mn_fs = string_to_bool(mn_fs)
     req = ast.literal_eval(req)
     if mn_fs:
+        recvTime = time.time()
         load_start = time.time()
         image_data = base64.b64decode(req["body"])
         file = req["headers"]["Content-Disposition"].split(";")[1].split("=")[1]
@@ -157,12 +160,15 @@ def handle(req):
             } 
             communication_start = time.time()
             response = requests.post("http://gateway.openfaas:8080/function/va-stateful-facerec",json = fileBody)
-            communication_end = time.time()
+            result_content = response.text
+            data_dict = json.loads(result_content)
+            communication_end = data_dict["recvTime"]
             communication_time_gauge.set(communication_end - communication_start)
             push_to_gateway(pushGateway, job=funcName, registry=registry)
             if response.status_code == 200:
                 return {
                     "statusCode": 200,
+                    "recvTime" : recvTime,
                     "body" : "Success"
                 }
         if storageMode == 'obj':

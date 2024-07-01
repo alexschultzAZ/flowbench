@@ -115,6 +115,7 @@ def handle(req):
     outputMode = os.getenv("OUTPUTMODE")
     storageMode = os.getenv("STORAGE_TYPE")
     funcName = "stateful_modect"
+    recvTime = 0
     pushGateway = os.getenv("PUSHGATEWAY_IP")
     registry = CollectorRegistry()
     download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
@@ -143,6 +144,7 @@ def handle(req):
         if mn_fs:
             # print(type(reqJSON))
             #reqJSON = dict(item.split("=") for item in req.split("&"))
+            recvTime = time.time()
             load_start = time.time()
             reqJSON = ast.literal_eval(req)
             decodedFile = base64.b64decode(reqJSON["body"])
@@ -192,12 +194,15 @@ def handle(req):
             } 
             communication_start = time.time()
             response = requests.post("http://gateway.openfaas:8080/function/va-stateful-facextract",json = request_body)
-            communication_end = time.time()
+            result_content = response.text
+            data_dict = json.loads(result_content)
+            communication_end = data_dict["recvTime"]
             communication_time_gauge.set(communication_end - communication_start)
             push_to_gateway(pushGateway, job=funcName, registry=registry)
             if response.status_code == 200:
                 return {
                     "statusCode" : 200,
+                    "recvTime" : recvTime,
                     "body" : "Success"
                 }
         if storageMode == 'obj':

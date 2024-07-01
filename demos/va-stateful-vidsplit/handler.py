@@ -1,4 +1,5 @@
 import base64
+import json
 import os
 import sys
 import time
@@ -242,7 +243,9 @@ def handle(req):
                 }
                 communication_start = time.time()
                 result = requests.post("http://gateway.openfaas:8080/function/va-stateful-modect",json = fileBody)
-                communication_end = time.time()
+                result_content = result.text
+                data_dict = json.loads(result_content)
+                communication_end = data_dict["recvTime"]
                 communication_time_gauge.set(communication_end - communication_start)
                 push_to_gateway(pushGateway, job=funcName, registry=registry)
                 if result.status_code == 200:
