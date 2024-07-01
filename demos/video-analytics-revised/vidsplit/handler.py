@@ -5,6 +5,7 @@ import time
 import shutil
 from minio import Minio
 from minio.error import InvalidResponseError
+from prometheus_client import Gauge,CollectorRegistry,push_to_gateway
 from datetime import datetime
 from zipfile import ZipFile
 from zipfile import ZIP_STORED
@@ -12,7 +13,7 @@ import subprocess
 import ast
 import math
 
-MINIO_ADDRESS = "172.17.0.2:9000"
+MINIO_ADDRESS = os.getenv("ENDPOINTINPUT")
 minio_client = Minio(
     MINIO_ADDRESS,
     access_key="minioadmin",
@@ -177,6 +178,12 @@ def handle(req):
     mn_fs = os.getenv("MN_FS")
     mn_fs = string_to_bool(mn_fs)
     response = {}
+    funcName = "vidsplit"
+    pushGateway = os.getenv("PUSHGATEWAY_IP")
+    registry = CollectorRegistry()
+    download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
+    upload_time_gauge = Gauge(f'minio_write_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
+    computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
     try:
         if storage_mode == 'http':
             file = os.getenv("Http_Referer")
@@ -205,9 +212,14 @@ def handle(req):
                     print(response_msg)
                     exit(1)
             else: 
+                load_start = time.time()
                 new_file = load_from_minio(bucket, file)
-
+                load_end = time.time()
+                download_time_gauge.set(load_end - load_start)
+                compute_start = time.time()
                 outdir = solve(new_file, file.split(".")[0])
+                compute_end = time.time()
+                computation_time_gauge.set(compute_end - compute_start)
 
         if outdir:
             files = os.listdir(outdir)
@@ -227,7 +239,10 @@ def handle(req):
                     }
                 }
             if storage_mode == 'obj':
+                store_start = time.time()
                 store_to_minio(outputBucket, outdir)
+                store_end = time.time()
+                upload_time_gauge.set(store_end - store_start)
             else:
                 store_to_local_storage(mount_path, outputBucket, outdir)
 
@@ -236,5 +251,6 @@ def handle(req):
             shutil.rmtree(outdir)
     except Exception as e:
         response.update({"exception": str(e)})
+    push_to_gateway(pushGateway, job=funcName, registry=registry)
     response = {"bucketName" : outputBucket, "fileName" : files[0]}
     return response

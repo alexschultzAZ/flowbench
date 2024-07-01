@@ -1,11 +1,12 @@
-version: '1.0'
+version: 1.0
 provider:
   name: openfaas
   gateway: http://127.0.0.1:8080
+
 functions:
   va-stateful-vidsplit:
     lang: python3-flask-debian
-    handler: ./va-stateful-vidsplit
+    handler: ../demos/va-stateful-vidsplit
     image: raghavtiruvallur/va-stateful-vidsplit:latest
     environment:
       OUTPUTBUCKET: stage1
@@ -13,8 +14,10 @@ functions:
       INPUTMODE: obj
       write_debug: true
       STORAGE_TYPE: local
+      ENDPOINTINPUT: 172.17.0.2:9000
+      PUSHGATEWAY_IP: 172.17.0.3:9091
       MOUNT_PATH: /mnt/local-storage
-      PVC_NAME: local-storage-claim
+      PVC_NAME: 'local-storage-claim'
       MN_FS: true
   va-stateful-modect:
     lang: python3-flask-debian
@@ -26,6 +29,8 @@ functions:
       OUTPUTBUCKET: stage2
       MOUNT_PATH: /mnt/local-storage
       STORAGE_TYPE: local
+      ENDPOINTINPUT: 172.17.0.2:9000
+      PUSHGATEWAY_IP: 172.17.0.3:9091
       PIPELINE_STAGE: 2
       MODECT_MIN_AREA: 5
       MODECT_SKIP_RATE: 1
@@ -40,6 +45,8 @@ functions:
       INPUTMODE: local
       OUTPUTMODE: local
       OUTPUTBUCKET: stage3
+      ENDPOINTINPUT: 172.17.0.2:9000
+      PUSHGATEWAY_IP: 172.17.0.3:9091
       MOUNT_PATH: /mnt/local-storage
       STORAGE_TYPE: local
       PVC_NAME: local-storage-claim
@@ -53,6 +60,8 @@ functions:
       INPUTMODE: local
       OUTPUTMODE: local
       OUTPUTBUCKET: stage4
+      ENDPOINTINPUT: 172.17.0.2:9000
+      PUSHGATEWAY_IP: 172.17.0.3:9091
       MOUNT_PATH: /mnt/local-storage
       STORAGE_TYPE: local
       PVC_NAME: local-storage-claim

@@ -5,3 +5,4 @@ imutils
 numpy
 pillow
 facenet-pytorch
+prometheus_client

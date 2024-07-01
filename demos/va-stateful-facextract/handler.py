@@ -4,6 +4,7 @@ import sys
 import time
 import shutil
 from minio import Minio
+from prometheus_client import Gauge,CollectorRegistry,push_to_gateway
 from minio.error import InvalidResponseError
 from datetime import datetime
 
@@ -11,7 +12,7 @@ import requests
 from .handler1 import *
 import ast
 
-MINIO_ADDRESS = "192.168.0.219:9000"
+MINIO_ADDRESS = os.getenv("ENDPOINTINPUT")
 minio_client = Minio(
     MINIO_ADDRESS,
     access_key="minioadmin",
@@ -98,15 +99,24 @@ def handle(req):
     outputMode = os.getenv("OUTPUTMODE")
     outputBucket = os.getenv("OUTPUTBUCKET")
     storageMode = os.getenv("STORAGE_TYPE")
+    funcName = "stateful_facextract"
+    pushGateway = os.getenv("PUSHGATEWAY_IP")
+    registry = CollectorRegistry()
+    download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
+    communication_time_gauge = Gauge(f'communication_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
+    computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
     mn_fs = os.getenv("MN_FS")
     mn_fs = string_to_bool(mn_fs)
     req = ast.literal_eval(req)
     if mn_fs:
+        load_start = time.time()
         image_data = base64.b64decode(req["body"])
         file = req["headers"]["Content-Disposition"].split(";")[1].split("=")[1]
         new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
         with open(new_file,"wb") as image_file:
             image_file.write(image_data)
+        load_end = time.time()
+        download_time_gauge.set(load_end - load_start)
         original_filename = file.split("-")[0]
     else:
         bucket = req["bucketName"]
@@ -124,8 +134,11 @@ def handle(req):
                 print(response_msg)
                 exit(1)
 
+    computation_start = time.time()
     face_fun = Face()
     outdir = face_fun.handler_small(new_file, original_filename)
+    computation_end = time.time()
+    computation_time_gauge.set(computation_end - computation_start)
 
     if outdir != None and outdir != '':
         files = os.listdir(outdir)
@@ -142,8 +155,11 @@ def handle(req):
                     "Content-Transfer-Encoding": "base64"
                 }
             } 
+            communication_start = time.time()
             response = requests.post("http://gateway.openfaas:8080/function/va-stateful-facerec",json = fileBody)
-            print(response.text)
+            communication_end = time.time()
+            communication_time_gauge.set(communication_end - communication_start)
+            push_to_gateway(pushGateway, job=funcName, registry=registry)
             if response.status_code == 200:
                 return {
                     "statusCode": 200,
@@ -156,5 +172,6 @@ def handle(req):
     os.remove(new_file)
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
+    push_to_gateway(pushGateway, job=funcName, registry=registry)
     response = {"bucketName" : outputBucket, "fileName" : files[0]}
     return response

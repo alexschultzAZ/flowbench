@@ -8,10 +8,11 @@ import requests
 from minio import Minio
 import json
 from minio.error import InvalidResponseError
+from prometheus_client import Gauge,CollectorRegistry,push_to_gateway
 from datetime import datetime
 from .handle import solve
 
-MINIO_ADDRESS = "172.17.0.2:9000"
+MINIO_ADDRESS = os.getenv("ENDPOINTINPUT")
 minio_client = Minio(
     MINIO_ADDRESS,
     access_key="minioadmin",
@@ -113,6 +114,12 @@ def handle(req):
     mount_path = os.getenv("MOUNT_PATH")
     outputMode = os.getenv("OUTPUTMODE")
     storageMode = os.getenv("STORAGE_TYPE")
+    funcName = "stateful_modect"
+    pushGateway = os.getenv("PUSHGATEWAY_IP")
+    registry = CollectorRegistry()
+    download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
+    communication_time_gauge = Gauge(f'communication_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
+    computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
     mn_fs = os.getenv("MN_FS")
     mn_fs = string_to_bool(mn_fs)
     if storageMode == 'http':
@@ -136,13 +143,19 @@ def handle(req):
         if mn_fs:
             # print(type(reqJSON))
             #reqJSON = dict(item.split("=") for item in req.split("&"))
+            load_start = time.time()
             reqJSON = ast.literal_eval(req)
             decodedFile = base64.b64decode(reqJSON["body"])
             file = reqJSON["headers"]["Content-Disposition"].split(";")[1].split("=")[1]
             new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
             with open(new_file,"wb") as zipfile:
                 zipfile.write(decodedFile)
+            load_end = time.time()
+            download_time_gauge.set(load_end - load_start)
+            compute_start = time.time()
             outdir = solve(new_file)
+            compute_end = time.time()
+            computation_time_gauge.set(compute_end - compute_start)
         else:
             reqJSON = ast.literal_eval(req)
             bucket = reqJSON["bucketName"]
@@ -177,7 +190,11 @@ def handle(req):
                     "Content-Transfer-Encoding": "base64"
                 }
             } 
+            communication_start = time.time()
             response = requests.post("http://gateway.openfaas:8080/function/va-stateful-facextract",json = request_body)
+            communication_end = time.time()
+            communication_time_gauge.set(communication_end - communication_start)
+            push_to_gateway(pushGateway, job=funcName, registry=registry)
             if response.status_code == 200:
                 return {
                     "statusCode" : 200,
@@ -191,5 +208,6 @@ def handle(req):
     os.remove(new_file)
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
+    push_to_gateway(pushGateway, job=funcName, registry=registry)
     response = {"bucketName" : outputBucket, "fileName" : files[0]}
     return response

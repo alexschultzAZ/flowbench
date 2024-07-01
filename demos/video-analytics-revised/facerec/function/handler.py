@@ -9,12 +9,13 @@ import time
 import shutil
 import requests
 from minio import Minio
+from prometheus_client import Gauge,CollectorRegistry,push_to_gateway
 from minio.error import InvalidResponseError
 from .handler1 import *
 from datetime import datetime
 import ast
 
-MINIO_ADDRESS = "192.168.0.219:9000"
+MINIO_ADDRESS = os.getenv("ENDPOINTINPUT")
 minio_client = Minio(
     MINIO_ADDRESS,
     access_key="minioadmin",
@@ -105,6 +106,12 @@ def handle(req):
     req = ast.literal_eval(req)
     mn_fs = os.getenv("MN_FS")
     mn_fs = string_to_bool(mn_fs)
+    pushGateway = os.getenv("PUSHGATEWAY_IP")
+    registry = CollectorRegistry()
+    funcName = "facerec"
+    download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
+    upload_time_gauge = Gauge(f'minio_write_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
+    computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
     if mn_fs:
         image_data = base64.b64decode(req["body"])
         file = req["headers"]["Content-Disposition"].split(";")[1].split("=")[1]
@@ -121,7 +128,10 @@ def handle(req):
         storageMode = os.getenv("STORAGE_TYPE")
         original_filename = file.split("-")[0]
         if storageMode == 'obj':
+            load_start = time.time()
             new_file = load_from_minio(bucket, file)
+            load_end = time.time()
+            download_time_gauge.set(load_end - load_start)
         else:
             mountPath = os.getenv("MOUNT_PATH")
             response, isPresent = load_from_local_storage(mountPath,bucket,file)
@@ -132,8 +142,11 @@ def handle(req):
                 print(response)
                 exit(1)
 
+    compute_start = time.time()
     face_fun = Face()
     outdir, name = face_fun.handler_small(new_file, original_filename)
+    compute_end = time.time()
+    computation_time_gauge.set(compute_end - compute_start)
 
     if outdir != None and outdir != '':
         files = os.listdir(outdir)
@@ -155,7 +168,10 @@ def handle(req):
                 }
             } 
         if storageMode == 'obj':
+            store_start = time.time()
             store_to_minio(outputBucket, outdir)
+            store_end = time.time()
+            upload_time_gauge.set(store_end - store_start)
         else:
             store_to_local_storage(mountPath,outputBucket,outdir)
 
@@ -163,6 +179,7 @@ def handle(req):
     os.remove(new_file)
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
+    push_to_gateway(pushGateway, job=funcName, registry=registry)
     response = {"bucketName" : outputBucket, "fileName" : files[0]}
     return response
 

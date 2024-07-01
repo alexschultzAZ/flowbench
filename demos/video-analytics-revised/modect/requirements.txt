@@ -2,3 +2,4 @@ minio
 imutils
 numpy
 opencv-python-headless
+prometheus_client

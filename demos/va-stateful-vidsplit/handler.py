@@ -6,6 +6,7 @@ import shutil
 from minio import Minio
 from minio.error import InvalidResponseError
 from datetime import datetime
+from prometheus_client import Gauge,CollectorRegistry,push_to_gateway
 from zipfile import ZipFile
 from zipfile import ZIP_STORED
 import subprocess
@@ -13,7 +14,7 @@ import requests
 import ast
 import math
 
-MINIO_ADDRESS = "172.17.0.2:9000"
+MINIO_ADDRESS = os.getenv("ENDPOINTINPUT")
 minio_client = Minio(
     MINIO_ADDRESS,
     access_key="minioadmin",
@@ -178,6 +179,12 @@ def handle(req):
     outputBucket = os.getenv("OUTPUTBUCKET")
     mn_fs = os.getenv("MN_FS")
     mn_fs = string_to_bool(mn_fs)
+    funcName = "stateful_vidsplit"
+    pushGateway = os.getenv("PUSHGATEWAY_IP")
+    registry = CollectorRegistry()
+    download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
+    communication_time_gauge = Gauge(f'communication_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
+    computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
     files = []
     response = {}
     try:
@@ -193,18 +200,29 @@ def handle(req):
             bucket = req["bucketName"]
             file = req["fileName"]
             if storage_mode == 'local':
+                load_start = time.time() 
                 response_msg, isPresent = load_from_local_storage(mount_path, bucket, file)
+                load_end = time.time()
+                download_time_gauge.set(load_end - load_start)
                 if isPresent:
                     new_file = response_msg
+                    compute_start = time.time()
                     outdir = solve(new_file, file.split(".")[0])
+                    compute_end = time.time()
+                    computation_time_gauge.set(compute_end - compute_start)
                 else:
                     print('No input file to read')
                     print(response_msg)
                     exit(1)
-            else: 
+            else:
+                load_start = time.time() 
                 new_file = load_from_minio(bucket, file)
-
+                load_end = time.time()
+                download_time_gauge.set(load_end - load_start)
+                compute_start = time.time()
                 outdir = solve(new_file, file.split(".")[0])
+                compute_end = time.time()
+                computation_time_gauge.set(compute_end - compute_start)
 
         if outdir:
             files = os.listdir(outdir)
@@ -222,7 +240,11 @@ def handle(req):
                         "Content-Transfer-Encoding": "base64"
                     }
                 }
+                communication_start = time.time()
                 result = requests.post("http://gateway.openfaas:8080/function/va-stateful-modect",json = fileBody)
+                communication_end = time.time()
+                communication_time_gauge.set(communication_end - communication_start)
+                push_to_gateway(pushGateway, job=funcName, registry=registry)
                 if result.status_code == 200:
                     return {
                         "statusCode" : 200,
@@ -238,5 +260,6 @@ def handle(req):
             shutil.rmtree(outdir)
     except Exception as e:
         response.update({"exception": str(e)})
+    push_to_gateway(pushGateway, job=funcName, registry=registry)
     response = {"bucketName" : outputBucket, "fileName" : files[0]}
     return response

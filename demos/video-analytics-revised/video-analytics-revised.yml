@@ -15,6 +15,8 @@ functions:
     order: 1
     environment:
       OUTPUTBUCKET: stage1
+      ENDPOINTINPUT: 172.17.0.2:9000
+      PUSHGATEWAY_IP: 172.17.0.3:9091
       write_debug: true
       STORAGE_TYPE: obj
       MN_FS: false
@@ -28,6 +30,8 @@ functions:
     order: 2
     environment:
       OUTPUTBUCKET: stage2
+      ENDPOINTINPUT: 172.17.0.2:9000
+      PUSHGATEWAY_IP: 172.17.0.3:9091
       STORAGE_TYPE: obj
       PIPELINE_STAGE: 2
       MODECT_MIN_AREA: 5
@@ -43,6 +47,8 @@ functions:
     order: 3
     environment:
       OUTPUTBUCKET: stage3
+      ENDPOINTINPUT: 172.17.0.2:9000
+      PUSHGATEWAY_IP: 172.17.0.3:9091
       STORAGE_TYPE: obj
       write_debug: true
       MN_FS: false
@@ -55,6 +61,8 @@ functions:
     order: 4
     environment:
       OUTPUTBUCKET: stage4
+      ENDPOINTINPUT: 172.17.0.2:9000
+      PUSHGATEWAY_IP: 172.17.0.3:9091
       STORAGE_TYPE: obj
       write_debug: true
       MN_FS: false
