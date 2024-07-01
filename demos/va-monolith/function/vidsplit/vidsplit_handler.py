@@ -4,6 +4,7 @@ import time
 import shutil
 from minio import Minio
 from minio.error import InvalidResponseError
+from prometheus_client import Gauge,CollectorRegistry,push_to_gateway
 from datetime import datetime
 from zipfile import ZipFile
 from zipfile import ZIP_STORED
@@ -173,6 +174,12 @@ def vidsplit_handler(req):
     output_bucket_name = os.getenv('OUTPUTBUCKET1')
     outputMode = os.getenv("OUTPUTMODE")
     storage_mode = os.getenv("STORAGE_TYPE")
+    funcName = "vidsplit"
+    pushGateway = os.getenv("PUSHGATEWAY_IP")
+    registry = CollectorRegistry()
+    download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
+    upload_time_gauge = Gauge(f'minio_write_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
+    computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
     response = {}
     # files =[]
     try:
@@ -185,7 +192,6 @@ def vidsplit_handler(req):
             outdir = solve(new_file, file.split(".")[0])
         else:
             req = dict(item.split("=") for item in req.split("&"))
-            print(req)
             bucket = req["bucketName"]
             file = req["fileName"]
             if 'local_storage' in storage_mode:
@@ -199,8 +205,14 @@ def vidsplit_handler(req):
                     print(response_msg)
                     exit(1)
             else:
+                load_start = time.time()
                 new_file = load_from_minio(bucket, file)
+                load_end = time.time()
+                download_time_gauge.set(load_end - load_start)
+                compute_start = time.time()
                 outdir = solve(new_file, file.split(".")[0])
+                compute_end = time.time()
+                computation_time_gauge.set(compute_end - compute_start)
 
         if outdir:
             files = os.listdir(outdir)
@@ -209,6 +221,8 @@ def vidsplit_handler(req):
                 store_start = time.time()
                 store_to_minio(bucket, outdir)
                 store_end = time.time()
+                upload_time_gauge.set(store_end - store_start)
+                
                 
             elif storage_mode == 'local':
                 new_dir = output_bucket_name
@@ -221,6 +235,7 @@ def vidsplit_handler(req):
     except Exception as e:
         print(e)
         response.update({"exception": str(e)})
+    push_to_gateway(pushGateway, job=funcName, registry=registry)
     response = {"bucketName" : output_bucket_name, "fileName" : files[0]}
     return response
     

@@ -9,7 +9,7 @@ functions:
     name: va-stateful-vidsplit
     lang: python3-flask-debian
     handler: ./va-stateful-vidsplit
-    image: raghavtiruvallur/va-stateful-vidsplit:latest
+    image: flowbench2024/va-stateful-vidsplit:latest
     order: 1
     environment:
       OUTPUTBUCKET: stage1
@@ -24,7 +24,7 @@ functions:
     name: va-stateful-modect
     lang: python3-flask-debian
     handler: ../demos/va-stateful-modect
-    image: raghavtiruvallur/va-stateful-modect:latest
+    image: flowbench2024/va-stateful-modect:latest
     order: 2
     environment:
       INPUTMODE: local
@@ -42,7 +42,7 @@ functions:
     name: va-stateful-facextract
     lang: python3-flask-debian
     handler: ../demos/va-stateful-facextract
-    image: raghavtiruvallur/va-stateful-facextract:latest
+    image: flowbench2024/va-stateful-facextract:latest
     order: 3
     environment:
       INPUTMODE: local
@@ -57,7 +57,7 @@ functions:
     name: va-stateful-facerec
     lang: python3-flask-debian
     handler: ../demos/va-stateful-facerec
-    image: raghavtiruvallur/va-stateful-facerec:latest
+    image: flowbench2024/va-stateful-facerec:latest
     order: 4
     environment:
       INPUTMODE: local

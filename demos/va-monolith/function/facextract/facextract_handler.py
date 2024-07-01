@@ -3,6 +3,7 @@ import sys
 import time
 import shutil
 from minio import Minio
+from prometheus_client import CollectorRegistry,Gauge,push_to_gateway
 from minio.error import InvalidResponseError
 from datetime import datetime
 from .facextract_handler1 import *
@@ -97,6 +98,12 @@ def facextract_handler(req):
     mount_path = os.getenv('MOUNT_PATH')
     output_bucket_name = os.getenv('OUTPUTBUCKET3')
     outputMode = os.getenv("OUTPUTMODE")
+    pushGateway = os.getenv("PUSHGATEWAY_IP")
+    funcName = "facextract"
+    registry = CollectorRegistry()
+    download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
+    upload_time_gauge = Gauge(f'minio_write_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
+    computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
     bucket = req["bucketName"]
     file = req["fileName"]
     original_filename = file.split("-")[0]
@@ -115,11 +122,13 @@ def facextract_handler(req):
         load_start = time.time()
         new_file = load_from_minio(bucket, file)
         load_end = time.time()
+        download_time_gauge.set(load_end - load_start)
 
     compute_start = time.time()
     face_fun = Face()
     outdir = face_fun.handler_small(new_file, original_filename)
     compute_end = time.time()
+    computation_time_gauge.set(compute_end - compute_start)
 
     if outdir != None and outdir != '':
         files = os.listdir(outdir)
@@ -132,8 +141,10 @@ def facextract_handler(req):
             store_start = time.time()
             store_to_minio(bucket, outdir)
             store_end = time.time()
+            upload_time_gauge.set(store_end - store_start)
     os.remove(new_file)
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
+    push_to_gateway(pushGateway, job=funcName, registry=registry)
     response = {"bucketName" : output_bucket_name, "fileName" : files[0]}
     return response
