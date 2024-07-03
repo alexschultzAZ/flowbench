@@ -1,0 +1,14 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+functions:
+  lstm-training:
+    lang: python3
+    handler: ./lstm-training
+    image: flowbench2024/lstm-training:latest
+    environment:
+      MINIO_ENDPOINT: 172.17.0.4:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: lstm-sensor-data

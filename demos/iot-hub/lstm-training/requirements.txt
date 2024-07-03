@@ -1,0 +1,4 @@
+minio
+numpy
+tensorflow
+pandas
