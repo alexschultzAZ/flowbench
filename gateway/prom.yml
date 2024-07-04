@@ -1,0 +1,57 @@
+apiVersion: v1
+data:
+  alert.rules.yml: |
+    groups:
+      - name: openfaas
+        rules:
+        - alert: APIHighInvocationRate
+          expr: sum(rate(gateway_function_invocation_total{code="200"}[10s])) BY (function_name) > 5
+          for: 5s
+          labels:
+            service: gateway
+            severity: major
+          annotations:
+            description: High invocation total on "{{$labels.function_name}}"
+            summary: High invocation total on "{{$labels.function_name}}"
+  prometheus.yml: "global:\n  scrape_interval:     15s\n  evaluation_interval: 15s\n
+    \ external_labels:\n      monitor: 'faas-monitor'\n\nrule_files:\n    - 'alert.rules.yml'\n\nalerting:\n
+    \ alertmanagers:\n  - static_configs:\n    - targets:\n      - alertmanager:9093\n\nscrape_configs:\n
+    \ - job_name: 'prometheus'\n    scrape_interval: 10s\n    static_configs:\n      -
+    targets: ['localhost:9090']\n  - job_name: 'kube-state-metrics'\n    scrape_interval:
+    5s\n    static_configs:\n      - targets: ['kube-state-metrics.kube-system.svc.cluster.local:8080']\n
+    \     \n  - job_name: 'pushgateway'\n    static_configs:\n      - targets: ['172.17.0.3:9091']\n\n
+    \ - job_name: 'openfaas-pods'\n    scrape_interval: 5s\n    honor_labels: false\n
+    \   kubernetes_sd_configs:\n      - role: pod\n        namespaces:\n          names:\n
+    \           - openfaas\n    relabel_configs:\n    - action: labelmap\n      regex:
+    __meta_kubernetes_pod_label_(.+)\n    - source_labels: [__meta_kubernetes_namespace]\n
+    \     action: replace\n      target_label: kubernetes_namespace\n    - source_labels:
+    [__meta_kubernetes_pod_name]\n      action: replace\n      target_label: kubernetes_pod_name\n
+    \   - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]\n
+    \     action: keep\n      regex: true\n    - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]\n
+    \     action: replace\n      regex: ([^:]+)(?::\\d+)?;(\\d+)\n      replacement:
+    $1:$2\n      target_label: __address__\n  - job_name: 'kubernetes-cadvisor'\n
+    \   scrape_interval: 10s\n    kubernetes_sd_configs:\n      - role: node\n    scheme:
+    https\n    tls_config:\n      insecure_skip_verify: true\n    relabel_configs:\n
+    \     - action: labelmap\n        regex: __meta_kubernetes_node_label_(.+)\n      -
+    source_labels: [__meta_kubernetes_node_name]\n        target_label: instance\n
+    \     - target_label: __address__\n        replacement: ${1}:10250\n      - source_labels:
+    [__meta_kubernetes_node_name]\n        target_label: kubernetes_node\n"
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"alert.rules.yml":"groups:\n  - name: openfaas\n    rules:\n    - alert: APIHighInvocationRate\n      expr: sum(rate(gateway_function_invocation_total{code=\"200\"}[10s])) BY (function_name) \u003e 5\n      for: 5s\n      labels:\n        service: gateway\n        severity: major\n      annotations:\n        description: High invocation total on \"{{$labels.function_name}}\"\n        summary: High invocation total on \"{{$labels.function_name}}\"\n","prometheus.yml":"global:\n  scrape_interval:     15s\n  evaluation_interval: 15s\n  external_labels:\n      monitor: 'faas-monitor'\n\nrule_files:\n    - 'alert.rules.yml'\n\nalerting:\n  alertmanagers:\n  - static_configs:\n    - targets:\n      - alertmanager:9093\n\nscrape_configs:\n  - job_name: 'prometheus'\n    scrape_interval: 10s\n    static_configs:\n      - targets: ['localhost:9090']\n  - job_name: 'kube-state-metrics'\n    scrape_interval: 5s\n    static_configs:\n      - targets: ['kube-state-metrics.kube-system.svc.cluster.local:8080']\n      \n  - job_name: 'pushgateway'\n    static_configs:\n      - targets: ['172.17.0.3:9091']\n\n  - job_name: 'openfaas-pods'\n    scrape_interval: 5s\n    honor_labels: false\n    kubernetes_sd_configs:\n      - role: pod\n        namespaces:\n          names:\n            - openfaas\n    relabel_configs:\n    - action: labelmap\n      regex: __meta_kubernetes_pod_label_(.+)\n    - source_labels: [__meta_kubernetes_namespace]\n      action: replace\n      target_label: kubernetes_namespace\n    - source_labels: [__meta_kubernetes_pod_name]\n      action: replace\n      target_label: kubernetes_pod_name\n    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]\n      action: keep\n      regex: true\n    - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]\n      action: replace\n      regex: ([^:]+)(?::\\d+)?;(\\d+)\n      replacement: $1:$2\n      target_label: __address__\n  - job_name: 'kubernetes-cadvisor'\n    scrape_interval: 10s\n    kubernetes_sd_configs:\n      - role: node\n    scheme: https\n    tls_config:\n      insecure_skip_verify: true\n    relabel_configs:\n      - action: labelmap\n        regex: __meta_kubernetes_node_label_(.+)\n      - source_labels: [__meta_kubernetes_node_name]\n        target_label: instance\n      - target_label: __address__\n        replacement: ${1}:10250\n      - source_labels: [__meta_kubernetes_node_name]\n        target_label: kubernetes_node\n"},"kind":"ConfigMap","metadata":{"annotations":{"meta.helm.sh/release-name":"openfaas","meta.helm.sh/release-namespace":"openfaas"},"creationTimestamp":"2024-05-24T01:19:46Z","labels":{"app":"openfaas","app.kubernetes.io/managed-by":"Helm","chart":"openfaas-14.2.44","component":"prometheus-config","heritage":"Helm","release":"openfaas"},"name":"prometheus-config","namespace":"openfaas","resourceVersion":"6766819","uid":"e135b901-b0e5-428e-8578-ba8de951e24a"}}
+    meta.helm.sh/release-name: openfaas
+    meta.helm.sh/release-namespace: openfaas
+  creationTimestamp: "2024-05-24T01:19:46Z"
+  labels:
+    app: openfaas
+    app.kubernetes.io/managed-by: Helm
+    chart: openfaas-14.2.44
+    component: prometheus-config
+    heritage: Helm
+    release: openfaas
+  name: prometheus-config
+  namespace: openfaas
+  resourceVersion: "6767621"
+  uid: e135b901-b0e5-428e-8578-ba8de951e24a

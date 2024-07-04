@@ -10,6 +10,7 @@ functions:
     image: flowbench2024/vidsplit:latest
     environment:
       OUTPUTBUCKET: stage1
+      ENDPOINTINPUT: 172.17.0.4:9000 
       write_debug: true
       STORAGE_TYPE: obj
       MN_FS: false
@@ -22,6 +23,7 @@ functions:
     image: flowbench2024/modect:latest
     environment:
       OUTPUTBUCKET: stage2
+      ENDPOINTINPUT: 172.17.0.4:9000 
       STORAGE_TYPE: obj
       PIPELINE_STAGE: 2
       MODECT_MIN_AREA: 5
@@ -36,6 +38,7 @@ functions:
     image: flowbench2024/facextract:latest
     environment:
       OUTPUTBUCKET: stage3
+      ENDPOINTINPUT: 172.17.0.4:9000 
       STORAGE_TYPE: obj
       write_debug: true
       MN_FS: false
@@ -47,6 +50,7 @@ functions:
     image: flowbench2024/facerec:latest
     environment:
       OUTPUTBUCKET: stage4
+      ENDPOINTINPUT: 172.17.0.4:9000 
       STORAGE_TYPE: obj
       write_debug: true
       MN_FS: false

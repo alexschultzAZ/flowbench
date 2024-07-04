@@ -9,7 +9,7 @@ from datetime import datetime
 from .handler1 import *
 import ast
 
-MINIO_ADDRESS = "192.168.0.219:9000"
+MINIO_ADDRESS = os.environ["ENDPOINTINPUT"]
 minio_client = Minio(
     MINIO_ADDRESS,
     access_key="minioadmin",

@@ -10,7 +10,7 @@ from minio.error import InvalidResponseError
 from datetime import datetime
 from .handle import solve
 
-MINIO_ADDRESS = "172.17.0.2:9000"
+MINIO_ADDRESS = os.environ["ENDPOINTINPUT"]
 minio_client = Minio(
     MINIO_ADDRESS,
     access_key="minioadmin",

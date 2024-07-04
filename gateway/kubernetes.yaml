@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: va-monolith
+  namespace: openfaas-fn
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      faas_function: va-monolith
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        faas_function: va-monolith
+    spec:
+      containers:
+      - env:
+        - name: OUTPUTBUCKET1
+          value: stage1
+        - name: OUTPUTBUCKET2
+          value: stage2
+        - name: OUTPUTBUCKET3
+          value: stage3
+        - name: OUTPUTBUCKET4
+          value: stage4
+        - name: ENDPOINTINPUT
+          value: 172.17.0.4:9000
+        - name: PUSHGATEWAY_IP
+          value: 172.17.0.3:9091
+        - name: STORAGE_TYPE
+          value: obj
+        - name: PIPELINE_STAGE
+          value: '2'
+        - name: MODECT_MIN_AREA
+          value: '5'
+        - name: MODECT_SKIP_RATE
+          value: '1'
+        - name: write_debug
+          value: 'True'
+        image: flowbench2024/va-monolith:latest
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /_/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: va-monolith
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /_/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /mnt/local-storage
+          name: local-storage
+      volumes:
+      - name: local-storage
+        persistentVolumeClaim:
+          claimName: local-storage-claim
