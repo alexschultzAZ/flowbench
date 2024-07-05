@@ -23,7 +23,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Replace with your Flask app's URL
 FLASK_APP_URL = "http://localhost:8080/function/"
-function_name = 'va-monolith'
+function_name = 'va-stateful-vidsplit'
 def make_request(i, writer):
     try:
         start_time = time.time()
@@ -32,31 +32,22 @@ def make_request(i, writer):
 
         elapsed_time = end_time - start_time
         print(f"Invocation {i+1} at {datetime.now().time()}: Status code {response.status_code}")
-        writer.writerow([function_name, i+1, elapsed_time])
+        writer.writerow([i+1, elapsed_time])
     except requests.RequestException as e:
         print(f"Invocation {i+1} at {datetime.now().time()}: Request failed: {e}")
-        writer.writerow([function_name, i+1, "Failed"])
+        writer.writerow([i+1, "Failed"])
 
 def invoke_flask_app(limit, invocations, st):
     # interval = (minutes * 60) / invocations  # Calculate the interval in seconds
     
-    with open('response_times_va-monolith.csv', 'w', newline='') as file:
+    with open('response_times_va-stateful-gpu.csv', 'w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(["functionName", "Invocation", "ResponseTime"])
+        writer.writerow(["Invocation", "ResponseTime"])
         
-        # for i in range(invocations):
-        #     if time.time()  - st > limit:
-        #         break
-        #     make_request(i, writer)
-        # with ThreadPoolExecutor(max_workers=5) as executor:
-        #     futures = [executor.submit(make_request, i, writer) for i in range(invocations)]
-        # print(time.time() - t_start)'
-
-    # for i in range(invocations):
-        # print(f'Invocation {i}')
-
-            # for future in as_completed(futures):
-            #     pass  # Ensures all futures are completed
+        for i in range(invocations):
+            if time.time()  - st > limit:
+                break
+            make_request(i, writer)
 
 # Replace these values with your desired number of minutes and invocations
 invoke_flask_app(limit=60, invocations=100, st = time.time())

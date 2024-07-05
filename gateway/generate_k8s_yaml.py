@@ -104,7 +104,7 @@ def convert_faas_to_k8s(openfaas_yaml, config):
     return k8s_yaml
 
 # Example usage
-openfaas_yaml_file = '/home/tarun/Desktop/flowbench/flowbench-va-revised/flowbench/gateway/va-monolith-stack.yml'
+openfaas_yaml_file = '/home/tarun/Project/flowbench/gateway/va-stateful.yml'
 pvc_name = 'local-storage-claim'  # Replace with your PVC name
 mount_path = '/mnt/local-storage'  # Replace with your desired mount path in the container
 
@@ -112,6 +112,6 @@ mount_path = '/mnt/local-storage'  # Replace with your desired mount path in the
 config = {"pvcName" : pvc_name,"mountPath" : mount_path}
 k8s_yaml_output = convert_faas_to_k8s(openfaas_yaml_file, config)
 print(k8s_yaml_output)
-with open('/home/tarun/Desktop/flowbench/flowbench-va-revised/flowbench/gateway/kubernetes.yaml', 'w') as f:
+with open('/home/tarun/Project/flowbench/gateway/kubernetes.yaml', 'w') as f:
     f.write(k8s_yaml_output)
     #yaml.safe_dump(k8s_yaml_output, f, default_flow_style=False)
