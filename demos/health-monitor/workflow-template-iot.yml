@@ -1,0 +1,21 @@
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+
+workflow_logic:
+  name: cron
+
+functions:
+
+  iot-simulator:
+    name: iot-simulator
+    lang: python3
+    handler: ../demos/health-monitor/iot-simulator
+    image: tarun0508/iot-simulator:latest
+    order: 1
+    environment:
+      HEART_DATA: heart-data
+      write_debug: true
+    annotations:
+      topic: cron-function
+      schedule: '*/1 * * * *'

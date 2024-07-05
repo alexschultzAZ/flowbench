@@ -1,0 +1,7 @@
+requests
+opencv-python-headless
+minio
+imutils
+numpy
+pillow
+facenet-pytorch

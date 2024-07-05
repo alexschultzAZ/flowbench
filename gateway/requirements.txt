@@ -1,2 +1,6 @@
 Flask
 requests
+PyYAML
+debugpy
+croniter
+minio

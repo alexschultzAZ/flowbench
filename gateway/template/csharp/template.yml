@@ -1,0 +1,7 @@
+language: csharp
+fprocess: dotnet ./root.dll
+welcome_message: |
+  This template is deprecated and will be removed in a future
+  release.
+
+  Use dotnet8-csharp instead.

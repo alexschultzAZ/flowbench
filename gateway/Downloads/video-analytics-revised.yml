@@ -1,0 +1,77 @@
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+
+workflow_logic:
+  name: pipeline
+
+functions:
+
+  vidsplit:
+    name: vidsplit
+    lang: python3
+    handler: ../demos/video-analytics-revised/vidsplit
+    image: flowbench2024/vidsplit:latest
+    order: 1
+    environment:
+      OUTPUTBUCKET: stage1
+      OUTPUTMODE: local
+      INPUTMODE: obj
+      write_debug: true
+      STORAGE_TYPE: obj
+      MOUNT_PATH: '/mnt/local_storage'
+      PVC_NAME: 'local-storage-claim'
+      MN_FS: true
+   
+
+  modect:
+    name: modect
+    lang: dockerfile
+    handler: ../demos/video-analytics-revised/modect
+    image: flowbench2024/modect:latest
+    order: 2
+    environment:
+      INPUTMODE: local
+      OUTPUTMODE: local
+      OUTPUTBUCKET: stage2
+      MOUNT_PATH: '/mnt/local_storage'
+      STORAGE_TYPE: obj
+      PIPELINE_STAGE: 2
+      MODECT_MIN_AREA: 5
+      MODECT_SKIP_RATE: 1
+      PVC_NAME: 'local-storage-claim'
+      write_debug: true
+      MN_FS: true
+
+  facextract:
+    name: facextract
+    lang: dockerfile
+    handler: ../demos/video-analytics-revised/facextract
+    image: flowbench2024/facextract:latest
+    order: 3
+    environment:
+      INPUTMODE: local
+      OUTPUTMODE: local
+      OUTPUTBUCKET: stage3
+      MOUNT_PATH: /mnt/local_storage
+      STORAGE_TYPE: obj
+      PVC_NAME: 'local-storage-claim'
+      write_debug: true
+      MN_FS: true
+
+  facerec:
+    name: facerec
+    lang: dockerfile
+    handler: ../demos/video-analytics-revised/facerec
+    image: flowbench2024/facerec:latest
+    order: 4
+    environment:
+      INPUTMODE: local
+      OUTPUTMODE: local
+      OUTPUTBUCKET: stage4
+      MOUNT_PATH: /mnt/local_storage
+      STORAGE_TYPE: obj
+      PVC_NAME: 'local-storage-claim'
+      write_debug: true
+      MN_FS: true
+ 

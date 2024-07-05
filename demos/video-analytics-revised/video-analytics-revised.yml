@@ -1,0 +1,61 @@
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+
+workflow_logic:
+  name: pipeline
+
+functions:
+
+  vidsplit:
+    name: vidsplit
+    lang: python3
+    handler: ../demos/video-analytics-revised/vidsplit
+    image: flowbench2024/vidsplit:latest
+    order: 1
+    environment:
+      OUTPUTBUCKET: stage1
+      write_debug: true
+      STORAGE_TYPE: obj
+      MN_FS: false
+   
+
+  modect:
+    name: modect
+    lang: dockerfile
+    handler: ../demos/video-analytics-revised/modect
+    image: flowbench2024/modect:latest
+    order: 2
+    environment:
+      OUTPUTBUCKET: stage2
+      STORAGE_TYPE: obj
+      PIPELINE_STAGE: 2
+      MODECT_MIN_AREA: 5
+      MODECT_SKIP_RATE: 1
+      write_debug: true
+      MN_FS: false
+
+  facextract:
+    name: facextract
+    lang: dockerfile
+    handler: ../demos/video-analytics-revised/facextract
+    image: flowbench2024/facextract:latest
+    order: 3
+    environment:
+      OUTPUTBUCKET: stage3
+      STORAGE_TYPE: obj
+      write_debug: true
+      MN_FS: false
+
+  facerec:
+    name: facerec
+    lang: dockerfile
+    handler: ../demos/video-analytics-revised/facerec
+    image: flowbench2024/facerec:latest
+    order: 4
+    environment:
+      OUTPUTBUCKET: stage4
+      STORAGE_TYPE: obj
+      write_debug: true
+      MN_FS: false
+ 
