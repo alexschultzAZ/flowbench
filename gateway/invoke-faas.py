@@ -19,7 +19,7 @@ def make_request(i, function_name, writer, data):
 def invoke_flask_app(limit, invocations, st):
     function_names = ["vidsplit", "modect", "facextract", "facerec"]
 
-    with open('response_times_va_faas.csv', 'w', newline='') as file:
+    with open('response_times_va_faas_July_25.csv', 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(["functionName", "Invocation", "ResponseTime"])
         i = 0

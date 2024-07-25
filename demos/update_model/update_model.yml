@@ -1,0 +1,16 @@
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+
+functions:
+  updatemodel:
+    lang: python3-debian
+    handler: ./update_model
+    image: flowbench2024/update_model
+    annotations:
+      com.openfaas.profile: gpu
+    environment:
+      read_timeout: "1500s"
+      write_timeout: "1500s"
+      exec_timeout: "1500s"
+      MINIO_ADDRESS: "172.17.0.3:9000"

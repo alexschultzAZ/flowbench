@@ -1,0 +1,4 @@
+datasets==2.20.0
+minio==7.2.7
+tensorflow==2.15.1
+transformers==4.42.1

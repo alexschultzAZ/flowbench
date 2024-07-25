@@ -1,0 +1,220 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "2"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{"deployment.kubernetes.io/revision":"1","meta.helm.sh/release-name":"openfaas","meta.helm.sh/release-namespace":"openfaas"},"creationTimestamp":"2024-07-03T02:35:10Z","generation":3,"labels":{"app":"openfaas","app.kubernetes.io/managed-by":"Helm","chart":"openfaas-14.2.50","component":"gateway","heritage":"Helm","release":"openfaas"},"name":"gateway","namespace":"openfaas","resourceVersion":"501602","uid":"a9678df6-8d05-4418-a175-44b5adab63fd"},"spec":{"progressDeadlineSeconds":600,"replicas":1,"revisionHistoryLimit":10,"selector":{"matchLabels":{"app":"gateway"}},"strategy":{"rollingUpdate":{"maxSurge":"25%","maxUnavailable":"25%"},"type":"RollingUpdate"},"template":{"metadata":{"annotations":{"prometheus.io/port":"8082","prometheus.io/scrape":"true"},"creationTimestamp":null,"labels":{"app":"gateway"}},"spec":{"containers":[{"command":["./gateway"],"env":[{"name":"read_timeout","value":"20m"},{"name":"write_timeout","value":"20m"},{"name":"upstream_timeout","value":"15m"},{"name":"functions_provider_url","value":"http://127.0.0.1:8081/"},{"name":"direct_functions","value":"false"},{"name":"direct_functions_suffix","value":"openfaas-fn.svc.cluster.local"},{"name":"function_namespace","value":"openfaas-fn"},{"name":"faas_nats_address","value":"nats.openfaas.svc.cluster.local"},{"name":"faas_nats_port","value":"4222"},{"name":"faas_nats_channel","value":"faas-request"},{"name":"basic_auth","value":"true"},{"name":"secret_mount_path","value":"/var/secrets"},{"name":"scale_from_zero","value":"true"},{"name":"max_idle_conns","value":"1024"},{"name":"max_idle_conns_per_host","value":"1024"},{"name":"probe_functions","value":"false"},{"name":"async","value":"true"}],"image":"ghcr.io/openfaas/gateway:0.27.8","imagePullPolicy":"IfNotPresent","livenessProbe":{"failureThreshold":3,"httpGet":{"path":"/healthz","port":8080,"scheme":"HTTP"},"initialDelaySeconds":1,"periodSeconds":5,"successThreshold":1,"timeoutSeconds":5},"name":"gateway","ports":[{"containerPort":8080,"name":"http","protocol":"TCP"},{"containerPort":8082,"name":"gw-metrics","protocol":"TCP"}],"readinessProbe":{"failureThreshold":3,"httpGet":{"path":"/healthz","port":8080,"scheme":"HTTP"},"initialDelaySeconds":1,"periodSeconds":5,"successThreshold":1,"timeoutSeconds":5},"resources":{"requests":{"cpu":"100m","memory":"120Mi"}},"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File","volumeMounts":[{"mountPath":"/var/secrets","name":"auth","readOnly":true}]},{"command":["./faas-netes"],"env":[{"name":"port","value":"8081"},{"name":"function_namespace","value":"openfaas-fn"},{"name":"read_timeout","value":"1m05s"},{"name":"profiles_namespace","value":"openfaas"},{"name":"write_timeout","value":"1m05s"},{"name":"image_pull_policy","value":"Always"},{"name":"http_probe","value":"true"},{"name":"set_nonroot_user","value":"false"},{"name":"readiness_probe_initial_delay_seconds","value":"0"},{"name":"readiness_probe_timeout_seconds","value":"1"},{"name":"readiness_probe_period_seconds","value":"2"},{"name":"readiness_probe_success_threshold","value":"1"},{"name":"readiness_probe_failure_threshold","value":"3"},{"name":"liveness_probe_initial_delay_seconds","value":"0"},{"name":"liveness_probe_timeout_seconds","value":"1"},{"name":"liveness_probe_period_seconds","value":"2"},{"name":"liveness_probe_failure_threshold","value":"3"},{"name":"cluster_role","value":"false"},{"name":"basic_auth","value":"true"},{"name":"secret_mount_path","value":"/var/secrets"},{"name":"debug","value":"false"},{"name":"log_encoding","value":"console"}],"image":"ghcr.io/openfaas/faas-netes:0.18.8","imagePullPolicy":"IfNotPresent","name":"faas-netes","ports":[{"containerPort":8081,"name":"provider","protocol":"TCP"}],"resources":{"requests":{"cpu":"100m","memory":"120Mi"}},"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File","volumeMounts":[{"mountPath":"/var/secrets","name":"auth","readOnly":true},{"mountPath":"/tmp","name":"faas-netes-temp-volume"}]}],"dnsPolicy":"ClusterFirst","restartPolicy":"Always","schedulerName":"default-scheduler","securityContext":{},"serviceAccount":"openfaas-controller","serviceAccountName":"openfaas-controller","terminationGracePeriodSeconds":30,"volumes":[{"emptyDir":{},"name":"faas-netes-temp-volume"},{"name":"auth","secret":{"defaultMode":420,"secretName":"basic-auth"}}]}}},"status":{"availableReplicas":1,"conditions":[{"lastTransitionTime":"2024-07-03T02:35:10Z","lastUpdateTime":"2024-07-03T02:35:30Z","message":"ReplicaSet \"gateway-556644ddcd\" has successfully progressed.","reason":"NewReplicaSetAvailable","status":"True","type":"Progressing"},{"lastTransitionTime":"2024-07-05T18:54:55Z","lastUpdateTime":"2024-07-05T18:54:55Z","message":"Deployment has minimum availability.","reason":"MinimumReplicasAvailable","status":"True","type":"Available"}],"observedGeneration":3,"readyReplicas":1,"replicas":1,"updatedReplicas":1}}
+    meta.helm.sh/release-name: openfaas
+    meta.helm.sh/release-namespace: openfaas
+  creationTimestamp: "2024-07-03T02:35:10Z"
+  generation: 4
+  labels:
+    app: openfaas
+    app.kubernetes.io/managed-by: Helm
+    chart: openfaas-14.2.50
+    component: gateway
+    heritage: Helm
+    release: openfaas
+  name: gateway
+  namespace: openfaas
+  resourceVersion: "520218"
+  uid: a9678df6-8d05-4418-a175-44b5adab63fd
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: gateway
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        prometheus.io/port: "8082"
+        prometheus.io/scrape: "true"
+      creationTimestamp: null
+      labels:
+        app: gateway
+    spec:
+      containers:
+      - command:
+        - ./gateway
+        env:
+        - name: read_timeout
+          value: 20m
+        - name: write_timeout
+          value: 20m
+        - name: upstream_timeout
+          value: 15m
+        - name: functions_provider_url
+          value: http://127.0.0.1:8081/
+        - name: direct_functions
+          value: "false"
+        - name: direct_functions_suffix
+          value: openfaas-fn.svc.cluster.local
+        - name: function_namespace
+          value: openfaas-fn
+        - name: faas_nats_address
+          value: nats.openfaas.svc.cluster.local
+        - name: faas_nats_port
+          value: "4222"
+        - name: faas_nats_channel
+          value: faas-request
+        - name: basic_auth
+          value: "true"
+        - name: secret_mount_path
+          value: /var/secrets
+        - name: scale_from_zero
+          value: "true"
+        - name: max_idle_conns
+          value: "1024"
+        - name: max_idle_conns_per_host
+          value: "1024"
+        - name: probe_functions
+          value: "false"
+        - name: async
+          value: "true"
+        image: ghcr.io/openfaas/gateway:0.27.8
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 1
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: gateway
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 8082
+          name: gw-metrics
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 1
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          requests:
+            cpu: 100m
+            memory: 120Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/secrets
+          name: auth
+          readOnly: true
+      - command:
+        - ./faas-netes
+        env:
+        - name: port
+          value: "8081"
+        - name: function_namespace
+          value: openfaas-fn
+        - name: read_timeout
+          value: 20m
+        - name: profiles_namespace
+          value: openfaas
+        - name: write_timeout
+          value: 20m
+        - name: image_pull_policy
+          value: Always
+        - name: http_probe
+          value: "true"
+        - name: set_nonroot_user
+          value: "false"
+        - name: readiness_probe_initial_delay_seconds
+          value: "0"
+        - name: readiness_probe_timeout_seconds
+          value: "1"
+        - name: readiness_probe_period_seconds
+          value: "2"
+        - name: readiness_probe_success_threshold
+          value: "1"
+        - name: readiness_probe_failure_threshold
+          value: "3"
+        - name: liveness_probe_initial_delay_seconds
+          value: "0"
+        - name: liveness_probe_timeout_seconds
+          value: "1"
+        - name: liveness_probe_period_seconds
+          value: "2"
+        - name: liveness_probe_failure_threshold
+          value: "3"
+        - name: cluster_role
+          value: "false"
+        - name: basic_auth
+          value: "true"
+        - name: secret_mount_path
+          value: /var/secrets
+        - name: debug
+          value: "false"
+        - name: log_encoding
+          value: console
+        image: ghcr.io/openfaas/faas-netes:0.18.8
+        imagePullPolicy: IfNotPresent
+        name: faas-netes
+        ports:
+        - containerPort: 8081
+          name: provider
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 100m
+            memory: 120Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/secrets
+          name: auth
+          readOnly: true
+        - mountPath: /tmp
+          name: faas-netes-temp-volume
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: openfaas-controller
+      serviceAccountName: openfaas-controller
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: faas-netes-temp-volume
+      - name: auth
+        secret:
+          defaultMode: 420
+          secretName: basic-auth
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2024-07-05T18:54:55Z"
+    lastUpdateTime: "2024-07-05T18:54:55Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2024-07-03T02:35:10Z"
+    lastUpdateTime: "2024-07-05T21:08:06Z"
+    message: ReplicaSet "gateway-76bcd8ff7c" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 4
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

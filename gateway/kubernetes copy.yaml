@@ -240,6 +240,7 @@ spec:
       labels:
         faas_function: va-stateful-facerec
     spec:
+      runtimeClassName: nvidia
       containers:
       - env:
         - name: ENDPOINTINPUT
@@ -247,7 +248,7 @@ spec:
         - name: PUSHGATEWAY_IP
           value: 172.17.0.2:9091
         - name: ACCELERATION
-          value: cpu
+          value: gpu
         - name: INPUTMODE
           value: local
         - name: OUTPUTMODE
@@ -265,6 +266,9 @@ spec:
         - name: write_debug
           value: 'True'
         image: flowbench2024/va-stateful-facerec:latest
+        resources:
+          limits:
+            nvidia.com/gpu: 1
         livenessProbe:
           failureThreshold: 3
           httpGet:
