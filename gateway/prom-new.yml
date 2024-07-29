@@ -1,0 +1,179 @@
+apiVersion: v1
+data:
+  alert.rules.yml: |
+    groups:
+      - name: openfaas
+        rules:
+        - alert: APIHighInvocationRate
+          expr: sum(rate(gateway_function_invocation_total{code="200"}[10s])) BY (function_name) > 5
+          for: 5s
+          labels:
+            service: gateway
+            severity: major
+          annotations:
+            description: High invocation total on "{{$labels.function_name}}"
+            summary: High invocation total on "{{$labels.function_name}}"
+  prometheus.yml: |
+    global:
+      scrape_interval:     15s
+      evaluation_interval: 15s
+      external_labels:
+          monitor: 'faas-monitor'
+
+    rule_files:
+        - 'alert.rules.yml'
+
+    alerting:
+      alertmanagers:
+      - static_configs:
+        - targets:
+          - alertmanager:9093
+
+    scrape_configs:
+      - job_name: 'prometheus'
+        scrape_interval: 10s
+        static_configs:
+          - targets: ['localhost:9090']
+      - job_name: 'kube-state-metrics'
+        static_configs:
+          - targets: ['kube-state-metrics.kube-system.svc.cluster.local:8080']
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_endpoints_name]
+          regex: 'node-exporter'
+          action: keep
+      - job_name: 'kubernetes-apiservers'
+        kubernetes_sd_configs:
+        - role: endpoints
+        scheme: https
+        tls_config:
+          ca_file: /var/snap/microk8s/current/certs/ca.crt
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+          action: keep
+          regex: default;kubernetes;https
+      - job_name: 'kubernetes-nodes'
+        scheme: https
+        tls_config:
+          ca_file: /var/snap/microk8s/current/certs/ca.crt
+        kubernetes_sd_configs:
+        - role: node
+        relabel_configs:
+        - action: labelmap
+          regex: __meta_kubernetes_node_label_(.+)
+        - target_label: __address__
+          replacement: kubernetes.default.svc:443
+        - source_labels: [__meta_kubernetes_node_name]
+          regex: (.+)
+          target_label: __metrics_path__
+          replacement: /api/v1/nodes/${1}/proxy/metrics
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+        - role: pod
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+          action: keep
+          regex: true
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+        - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+          action: replace
+          regex: ([^:]+)(?::\d+)?;(\d+)
+          replacement: $1:$2
+          target_label: __address__
+        - action: labelmap
+          regex: __meta_kubernetes_pod_label_(.+)
+        - source_labels: [__meta_kubernetes_namespace]
+          action: replace
+          target_label: kubernetes_namespace
+        - source_labels: [__meta_kubernetes_pod_name]
+          action: replace
+          target_label: kubernetes_pod_name
+      # - job_name: 'kube-state-metrics'
+      #   static_configs:
+      #     - targets: ['kube-state-metrics.kube-system.svc.cluster.local:8080']
+      - job_name: 'kubernetes-cadvisor'
+        static_configs:
+          - targets: ['192.168.0.183:10255']
+      - job_name: 'kubernetes-cadvisor-specific'
+        metrics_path: /metrics/cadvisor
+        static_configs:
+          - targets: ['192.168.0.183:10255']
+      - job_name: 'kubernetes-service-endpoints'
+        kubernetes_sd_configs:
+        - role: endpoints
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+          action: keep
+          regex: true
+        - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+          action: replace
+          target_label: __scheme__
+          regex: (https?)
+        - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+        - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+          action: replace
+          target_label: __address__
+          regex: ([^:]+)(?::\d+)?;(\d+)
+          replacement: $1:$2
+        - action: labelmap
+          regex: __meta_kubernetes_service_label_(.+)
+        - source_labels: [__meta_kubernetes_namespace]
+          action: replace
+          target_label: kubernetes_namespace
+        - source_labels: [__meta_kubernetes_service_name]
+          action: replace
+          target_label: kubernetes_name
+      - job_name: 'pushgateway'
+        static_configs:
+          - targets: ['172.17.0.3:9091']
+      - job_name: 'openfaas-pods'
+        scrape_interval: 5s
+        honor_labels: false
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - openfaas
+        relabel_configs:
+        - action: labelmap
+          regex: __meta_kubernetes_pod_label_(.+)
+        - source_labels: [__meta_kubernetes_namespace]
+          action: replace
+          target_label: kubernetes_namespace
+        - source_labels: [__meta_kubernetes_pod_name]
+          action: replace
+          target_label: kubernetes_pod_name
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+          action: keep
+          regex: true
+        - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+          action: replace
+          regex: ([^:]+)(?::\d+)?;(\d+)
+          replacement: $1:$2
+          target_label: __address__
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"alert.rules.yml":"groups:\n  - name: openfaas\n    rules:\n    - alert: APIHighInvocationRate\n      expr: sum(rate(gateway_function_invocation_total{code=\"200\"}[10s])) BY (function_name) \u003e 5\n      for: 5s\n      labels:\n        service: gateway\n        severity: major\n      annotations:\n        description: High invocation total on \"{{$labels.function_name}}\"\n        summary: High invocation total on \"{{$labels.function_name}}\"\n","prometheus.yml":"global:\n  scrape_interval:     15s\n  evaluation_interval: 15s\n  external_labels:\n      monitor: 'faas-monitor'\n\nrule_files:\n    - 'alert.rules.yml'\n\nalerting:\n  alertmanagers:\n  - static_configs:\n    - targets:\n      - alertmanager:9093\n\nscrape_configs:\n  - job_name: 'prometheus'\n    scrape_interval: 10s\n    static_configs:\n      - targets: ['localhost:9090']\n  - job_name: 'kube-state-metrics'\n    static_configs:\n      - targets: ['kube-state-metrics.kube-system.svc.cluster.local:8080']\n    kubernetes_sd_configs:\n      - role: endpoints\n    relabel_configs:\n    - source_labels: [__meta_kubernetes_endpoints_name]\n      regex: 'node-exporter'\n      action: keep\n  - job_name: 'kubernetes-apiservers'\n    kubernetes_sd_configs:\n    - role: endpoints\n    scheme: https\n    tls_config:\n      ca_file: /var/snap/microk8s/current/certs/ca.crt\n    relabel_configs:\n    - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]\n      action: keep\n      regex: default;kubernetes;https\n  - job_name: 'kubernetes-nodes'\n    scheme: https\n    tls_config:\n      ca_file: /var/snap/microk8s/current/certs/ca.crt\n    kubernetes_sd_configs:\n    - role: node\n    relabel_configs:\n    - action: labelmap\n      regex: __meta_kubernetes_node_label_(.+)\n    - target_label: __address__\n      replacement: kubernetes.default.svc:443\n    - source_labels: [__meta_kubernetes_node_name]\n      regex: (.+)\n      target_label: __metrics_path__\n      replacement: /api/v1/nodes/${1}/proxy/metrics\n  - job_name: 'kubernetes-pods'\n    kubernetes_sd_configs:\n    - role: pod\n    relabel_configs:\n    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]\n      action: keep\n      regex: true\n    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]\n      action: replace\n      target_label: __metrics_path__\n      regex: (.+)\n    - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]\n      action: replace\n      regex: ([^:]+)(?::\\d+)?;(\\d+)\n      replacement: $1:$2\n      target_label: __address__\n    - action: labelmap\n      regex: __meta_kubernetes_pod_label_(.+)\n    - source_labels: [__meta_kubernetes_namespace]\n      action: replace\n      target_label: kubernetes_namespace\n    - source_labels: [__meta_kubernetes_pod_name]\n      action: replace\n      target_label: kubernetes_pod_name\n  # - job_name: 'kube-state-metrics'\n  #   static_configs:\n  #     - targets: ['kube-state-metrics.kube-system.svc.cluster.local:8080']\n  - job_name: 'kubernetes-cadvisor'\n    static_configs:\n      - targets: ['192.168.0.183:10255']\n  - job_name: 'kubernetes-service-endpoints'\n    kubernetes_sd_configs:\n    - role: endpoints\n    relabel_configs:\n    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]\n      action: keep\n      regex: true\n    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]\n      action: replace\n      target_label: __scheme__\n      regex: (https?)\n    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]\n      action: replace\n      target_label: __metrics_path__\n      regex: (.+)\n    - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]\n      action: replace\n      target_label: __address__\n      regex: ([^:]+)(?::\\d+)?;(\\d+)\n      replacement: $1:$2\n    - action: labelmap\n      regex: __meta_kubernetes_service_label_(.+)\n    - source_labels: [__meta_kubernetes_namespace]\n      action: replace\n      target_label: kubernetes_namespace\n    - source_labels: [__meta_kubernetes_service_name]\n      action: replace\n      target_label: kubernetes_name\n  - job_name: 'pushgateway'\n    static_configs:\n      - targets: ['172.17.0.3:9091']\n  - job_name: 'openfaas-pods'\n    scrape_interval: 5s\n    honor_labels: false\n    kubernetes_sd_configs:\n      - role: pod\n        namespaces:\n          names:\n            - openfaas\n    relabel_configs:\n    - action: labelmap\n      regex: __meta_kubernetes_pod_label_(.+)\n    - source_labels: [__meta_kubernetes_namespace]\n      action: replace\n      target_label: kubernetes_namespace\n    - source_labels: [__meta_kubernetes_pod_name]\n      action: replace\n      target_label: kubernetes_pod_name\n    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]\n      action: keep\n      regex: true\n    - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]\n      action: replace\n      regex: ([^:]+)(?::\\d+)?;(\\d+)\n      replacement: $1:$2\n      target_label: __address__\n"},"kind":"ConfigMap","metadata":{"annotations":{"meta.helm.sh/release-name":"openfaas","meta.helm.sh/release-namespace":"openfaas"},"creationTimestamp":"2024-07-03T19:12:14Z","labels":{"app":"openfaas","app.kubernetes.io/managed-by":"Helm","chart":"openfaas-14.2.50","component":"prometheus-config","heritage":"Helm","release":"openfaas"},"name":"prometheus-config","namespace":"openfaas","resourceVersion":"8011","uid":"6e07b59b-2996-4bc3-a522-bbf31e5328c0"}}
+    meta.helm.sh/release-name: openfaas
+    meta.helm.sh/release-namespace: openfaas
+  creationTimestamp: "2024-07-03T19:12:14Z"
+  labels:
+    app: openfaas
+    app.kubernetes.io/managed-by: Helm
+    chart: openfaas-14.2.50
+    component: prometheus-config
+    heritage: Helm
+    release: openfaas
+  name: prometheus-config
+  namespace: openfaas
+  resourceVersion: "14223"
+  uid: 6e07b59b-2996-4bc3-a522-bbf31e5328c0

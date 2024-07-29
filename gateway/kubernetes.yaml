@@ -1,0 +1,303 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: va-stateful-vidsplit
+  namespace: openfaas-fn
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      faas_function: va-stateful-vidsplit
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        faas_function: va-stateful-vidsplit
+    spec:
+      containers:
+      - env:
+        - name: ENDPOINTINPUT
+          value: 172.17.0.3:9000
+        - name: PUSHGATEWAY_IP
+          value: 172.17.0.2:9091
+        - name: OUTPUTBUCKET
+          value: stage1
+        - name: OUTPUTMODE
+          value: local
+        - name: INPUTMODE
+          value: local
+        - name: write_debug
+          value: 'True'
+        - name: STORAGE_TYPE
+          value: local
+        - name: MOUNT_PATH
+          value: /mnt/local-storage
+        - name: PVC_NAME
+          value: local-storage-claim
+        - name: MN_FS
+          value: 'True'
+        image: flowbench2024/va-stateful-vidsplit:latest
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /_/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: va-stateful-vidsplit
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /_/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /mnt/local-storage
+          name: local-storage
+      volumes:
+      - name: local-storage
+        persistentVolumeClaim:
+          claimName: local-storage-claim
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: va-stateful-modect
+  namespace: openfaas-fn
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      faas_function: va-stateful-modect
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        faas_function: va-stateful-modect
+    spec:
+      containers:
+      - env:
+        - name: ENDPOINTINPUT
+          value: 172.17.0.3:9000
+        - name: PUSHGATEWAY_IP
+          value: 172.17.0.2:9091
+        - name: INPUTMODE
+          value: local
+        - name: OUTPUTMODE
+          value: local
+        - name: OUTPUTBUCKET
+          value: stage2
+        - name: MOUNT_PATH
+          value: /mnt/local-storage
+        - name: STORAGE_TYPE
+          value: local
+        - name: PIPELINE_STAGE
+          value: '2'
+        - name: MODECT_MIN_AREA
+          value: '5'
+        - name: MODECT_SKIP_RATE
+          value: '1'
+        - name: PVC_NAME
+          value: local-storage-claim
+        - name: MN_FS
+          value: 'True'
+        - name: write_debug
+          value: 'True'
+        image: flowbench2024/va-stateful-modect:latest
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /_/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: va-stateful-modect
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /_/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /mnt/local-storage
+          name: local-storage
+      volumes:
+      - name: local-storage
+        persistentVolumeClaim:
+          claimName: local-storage-claim
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: va-stateful-facextract
+  namespace: openfaas-fn
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      faas_function: va-stateful-facextract
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        faas_function: va-stateful-facextract
+    spec:
+      containers:
+      - env:
+        - name: ENDPOINTINPUT
+          value: 172.17.0.3:9000
+        - name: PUSHGATEWAY_IP
+          value: 172.17.0.2:9091
+        - name: INPUTMODE
+          value: local
+        - name: OUTPUTMODE
+          value: local
+        - name: OUTPUTBUCKET
+          value: stage3
+        - name: MOUNT_PATH
+          value: /mnt/local-storage
+        - name: STORAGE_TYPE
+          value: local
+        - name: PVC_NAME
+          value: local-storage-claim
+        - name: MN_FS
+          value: 'True'
+        - name: write_debug
+          value: 'True'
+        image: flowbench2024/va-stateful-facextract:latest
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /_/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: va-stateful-facextract
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /_/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /mnt/local-storage
+          name: local-storage
+      volumes:
+      - name: local-storage
+        persistentVolumeClaim:
+          claimName: local-storage-claim
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: va-stateful-facerec
+  namespace: openfaas-fn
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      faas_function: va-stateful-facerec
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        faas_function: va-stateful-facerec
+    spec:
+      runtimeClassName: nvidia
+      containers:
+      - env:
+        - name: ENDPOINTINPUT
+          value: 172.17.0.3:9000
+        - name: PUSHGATEWAY_IP
+          value: 172.17.0.2:9091
+        - name: ACCELERATION
+          value: gpu
+        - name: INPUTMODE
+          value: local
+        - name: OUTPUTMODE
+          value: local
+        - name: OUTPUTBUCKET
+          value: stage4
+        - name: MOUNT_PATH
+          value: /mnt/local-storage
+        - name: STORAGE_TYPE
+          value: local
+        - name: PVC_NAME
+          value: local-storage-claim
+        - name: MN_FS
+          value: 'True'
+        - name: write_debug
+          value: 'True'
+        image: flowbench2024/va-stateful-facerec:latest
+        resources:
+          limits:
+            nvidia.com/gpu: 1
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /_/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: va-stateful-facerec
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /_/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          successThreshold: 1
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /mnt/local-storage
+          name: local-storage
+      volumes:
+      - name: local-storage
+        persistentVolumeClaim:
+          claimName: local-storage-claim

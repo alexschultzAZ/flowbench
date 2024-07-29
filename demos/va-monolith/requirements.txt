@@ -1,0 +1,8 @@
+requests
+minio
+imutils
+numpy
+prometheus_client
+opencv-python-headless
+pillow
+facenet-pytorch

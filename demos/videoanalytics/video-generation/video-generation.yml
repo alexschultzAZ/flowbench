@@ -1,0 +1,46 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+functions:
+  videogeneration:
+    lang: python3
+    handler: ./videogeneration
+    image: tarun0508/videogeneration:latest
+    environment:
+      OPENFAAS_URL: 127.0.0.1:8080
+      PYTHONUNBUFFERED: 1
+      PIPELINE_STAGE: 1
+      ASYNC: 1
+      # VID_GEN
+      read_timeout: "500s"
+      write_timeout: "700s"
+      exec_timeout: "500s"
+      NUM_FILES_TO_UPLOAD: 1
+      INPUT_FOLDER: "../../sample"
+      STAGGER_BY: 2
+      NEXT_FUNCTION: vidsplit
+      NEXT_GATEWAY: 127.0.0.1:8080
+      
+      # output backend, mode: http, obj
+      OUTPUTMODE: obj
+      OUTPUTBUCKET: stage0
+      ENDPOINTOUTPUT: 127.0.0.1:9000
+      ACCESSKEYOUTPUT: minioadmin
+      SECRETKEYOUTPUT: minioadmin
+      LOCATIONOUTPUT: us-west-2
+      # influx db
+      # DATABASE: stats
+      DATABASE_URL: http://3.88.198.172:8086
+      ORG: visalab
+      INFLUXDB_TOKEN: K6OtOWvYylyM2gGV2dJ9eNPh-6iuW0mYKrkNVv3SVhAFHSlhh6mKIzb6UyrGZ-es_ygB_-0kxaY_rb7AHaPyWA==
+
+
+    labels:
+        com.openfaas.scale.min: 1
+        com.openfaas.scale.max: 5
+        com.openfaas.scale.factor: 50
+
+
+
+

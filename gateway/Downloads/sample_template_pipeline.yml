@@ -1,0 +1,60 @@
+provider:
+  name: openfaas
+  gateway: http://117.0.0.1:8080
+
+workflow_logic:
+  name: pipeline
+  entry_point: function_one
+  location: "location of the parent folder where all the openfaas functions are present"
+
+functions:  
+  temp:
+    name: temp
+    lang: python3
+    handler: ../demos/iot/temp
+    image: tarun0508/temp:latest
+    environment:
+      write_debug: true
+    labels:
+      com.openfaas.scale.min: "1"
+      com.openfaas.scale.max: "1"
+    annotations:
+      topic: "function_one_topic"
+    # The order will decide the execution number of the functions this can be used to control the relations like onr to one or many to one.
+    # For many-to-one we can have same order number for different functions which needs to be called on the same level. (Similar case in one-to-many)
+    order: 1
+    # We can use this flag to check if the function needs to be run in sync with the previous order or not
+    sync: true
+    next_function: function_three
+
+  conversion:
+    name: conversion
+    lang: python3
+    handler: ../demos/iot/conversion
+    image: tarun0508/conversion:latest
+    environment:
+      write_debug: true
+    labels:
+      com.openfaas.scale.min: "1"
+      com.openfaas.scale.max: "1"
+    annotations:
+      topic: "function_two_topic"
+    order: 2
+    sync: true
+    next_function: 
+
+  savetodb:
+    name: savetodb
+    lang: python3
+    handler: ../demos/iot/savetodb
+    image: tarun0508/savetodb:latest
+    environment:
+      write_debug: true
+    labels:
+      com.openfaas.scale.min: "1"
+      com.openfaas.scale.max: "1"
+    annotations:
+      topic: "function_three_topic"
+    order: 3
+    sync: false
+    next_function: function_two
