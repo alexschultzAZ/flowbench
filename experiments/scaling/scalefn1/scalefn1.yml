@@ -9,7 +9,7 @@ functions:
     image: ribsmocha/scalefn1:latest
 
     labels:
-        com.openfaas.scale.min: 5
+        com.openfaas.scale.min: 1
         com.openfaas.scale.max: 5
         com.openfaas.scale.factor: 100
         com.openfaas.scale.zero: false
