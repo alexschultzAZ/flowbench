@@ -15,12 +15,11 @@ def handle(req):
 
     print("Your Computer Name is:" + hostname)
     print("Your Computer IP Address is:" + IPAddr)
-    time.sleep(10)
     # print("running fn")
     # time.sleep(1)
     # print("done")
-    # for x in range(0, 10000000):
-    #     a = math.sqrt(64*64*64*64*64)
+    for x in range(0, 10000000):
+        a = math.sqrt(64*64*64*64*64)
     # interval = 2
     # utilization = 90
     # start_time = time.time()
@@ -32,4 +31,4 @@ def handle(req):
     #     time.sleep(1-utilization/100.0)
     #     start_time += 1
     print("did it")
-    # return "scalefn1 done"
+    return "scalefn1 done at " + str(IPAddr)
