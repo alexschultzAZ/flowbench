@@ -1,0 +1,26 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://10.1.238.115:8080
+functions:
+  scalefn1:
+    lang: python3
+    handler: ./scalefn1
+    image: ribsmocha/scalefn1:latest
+
+    labels:
+        com.openfaas.scale.min: 5
+        com.openfaas.scale.max: 5
+        com.openfaas.scale.factor: 100
+        com.openfaas.scale.zero: false
+        # com.openfaas.scale.zero-duration: 15m
+        # com.openfaas.scale.target: 50
+        # com.openfaas.scale.type: cpu
+        com.openfaas.scale.target-proportion: 0.90
+
+    # limits:
+    #   cpu: 100m
+    # requests:
+    #   cpu: 100m
+
+
