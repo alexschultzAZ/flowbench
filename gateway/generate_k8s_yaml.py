@@ -99,7 +99,7 @@ def convert_faas_to_k8s(openfaas_yaml, config):
         k8s_deployments.append(deployment)
 
     # Convert the list of deployments to a multi-document YAML
-    print(k8s_deployments)
+    # print(k8s_deployments)
     k8s_yaml = yaml.safe_dump_all(k8s_deployments, default_flow_style=False)
     return k8s_yaml
 
@@ -111,7 +111,7 @@ mount_path = '/mnt/local-storage'  # Replace with your desired mount path in the
 # Convert and print the Kubernetes Deployment YAML
 config = {"pvcName" : pvc_name,"mountPath" : mount_path}
 k8s_yaml_output = convert_faas_to_k8s(openfaas_yaml_file, config)
-print(k8s_yaml_output)
+# print(k8s_yaml_output)
 with open('/home/tarun/Project/flowbench/demos/update_model/kubernetes.yaml', 'w') as f:
     f.write(k8s_yaml_output)
     #yaml.safe_dump(k8s_yaml_output, f, default_flow_style=False)

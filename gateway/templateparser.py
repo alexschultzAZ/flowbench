@@ -20,21 +20,40 @@ class WorkflowProcessor:
         with open(file_path, 'r') as file:
             template = yaml.safe_load(file)
             # print(template)
-            self.functions = template['functions']
-            self.workflow_logic_data = template['workflow_logic']
+            self.functions = template['do']
+            self.construct_functions_dict()
+            self.workflow_logic_data = template['document']['workflow_logic']
             self.workflow_logic = self.workflow_logic_data['name']
-
+    def construct_functions_dict(self):
+        funcs = {}
+        for function in self.functions:
+            name = list(function.keys())[0]
+            funcs[name] = {}
+            func_details = {}
+            details = list(function.values())[0]
+            # print(list(details.keys()))
+            # print(list(details))
+            for key, value in details.items():
+                if( key == 'do'):
+                    func_details['handler'] = details['do'][0]['handle']['entry']
+                else:
+                    func_details[key] = value
+            
+            funcs[name] = func_details
+        print(funcs)
+        self.functions = funcs
     def build_execution_order(self):
         if self.workflow_logic != "branching":
-            
-            for _, details in self.functions.items():
+                        
+            for name, details in self.functions.items():
                 if 'order' not in details:
                     continue
                 order = 'level' + str(details['order'])
                 if order in self.execution_order:
-                    self.execution_order[order].append(details['name'])
+                    self.execution_order[order].append(name)
                 else:
-                    self.execution_order[order] = [details['name']]
+                    self.execution_order[order] = [name]
+
         self.execution_order = dict(sorted(self.execution_order.items()))
         print("Execution order data is {}".format(self.execution_order))
 
@@ -204,6 +223,6 @@ if __name__ == "__main__":
 
     # Create the WorkflowProcessor instance with the provided file name
     processor = WorkflowProcessor(args.template_file)
-    processor.build_and_deploy_functions()
+    # processor.build_and_deploy_functions()
     processor.process_workflow()
 
