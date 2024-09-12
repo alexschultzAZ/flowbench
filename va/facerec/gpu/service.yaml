@@ -1,0 +1,19 @@
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: gpu-test
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+        - image: docker.io/flowbench2024/gpu-knative
+          resources:
+            requests:
+              nvidia.com/gpu: "1"  # Request 1 GPU
+            limits:
+              nvidia.com/gpu: "1"  # Limit to 1 GPU
+          env:
+          - name: ACCELERATION
+            value: "gpu"

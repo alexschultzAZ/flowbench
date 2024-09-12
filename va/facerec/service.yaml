@@ -1,0 +1,19 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: local-knative-facerec
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+      - image: docker.io/flowbench2024/stateless-facerec-knative
+        env:
+        - name: OUTPUTBUCKET
+          value: "stage4"
+        - name: STORAGE_TYPE
+          value: "obj"
+        - name: ENDPOINTINPUT
+          value: "172.17.0.3:9000"
+        - name: MN_FS
+          value: "false"
