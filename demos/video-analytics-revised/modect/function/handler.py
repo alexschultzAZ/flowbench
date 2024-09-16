@@ -197,5 +197,5 @@ def handle(req):
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
     push_to_gateway(pushGateway, job=funcName, registry=registry)
-    response = {"bucketName" : outputBucket, "fileName" : files[0]}
+    response = {"bucketName" : outputBucket, "fileName" : files}
     return response

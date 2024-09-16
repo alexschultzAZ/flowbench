@@ -2,12 +2,8 @@ provider:
   name: openfaas
   gateway: http://127.0.0.1:8080
 
-workflow_logic:
-  name: pipeline
-
 functions:
   va-monolith:
-    name: va-monolith
     lang: dockerfile
     handler: ../demos/va-monolith
     image: flowbench2024/va-monolith:latest
@@ -17,7 +13,7 @@ functions:
       OUTPUTBUCKET2: stage2
       OUTPUTBUCKET3: stage3
       OUTPUTBUCKET4: stage4
-      ENDPOINTINPUT: 172.17.0.4:9000
+      ENDPOINTINPUT: 172.17.0.2:9000
       PUSHGATEWAY_IP: 172.17.0.3:9091
       STORAGE_TYPE: obj
       PIPELINE_STAGE: 2
