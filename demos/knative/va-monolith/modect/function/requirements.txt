@@ -1,4 +1,0 @@
-minio
-imutils
-numpy
-opencv-python-headless
