@@ -190,10 +190,11 @@ def handle(req):
             store_to_minio(outputBucket, outdir)
             upload_end = time.time()
             upload_time_gauge.set(upload_end - upload_start)
+            os.remove(new_file)
         else:
             store_to_local_storage(mount_path,outputBucket,outdir)
 
-    os.remove(new_file)
+   
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
     push_to_gateway(pushGateway, job=funcName, registry=registry)

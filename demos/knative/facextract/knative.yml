@@ -13,7 +13,7 @@ spec:
     spec:
       containerConcurrency: 1
       containers:
-        - image: raghavtiruvallur/knative-facextract:latest
+        - image: flowbench2024/knative-facextract-new
           ports:
             - containerPort: 8080
 

@@ -7,7 +7,7 @@ spec:
   template:
     spec:
       containers:
-      - image: docker.io/flowbench2024/knative-facerec-final
+      - image: docker.io/flowbench2024/knative-facerec-new
         resources:
           requests:
             nvidia.com/gpu: "1"  # Request 1 GPU
