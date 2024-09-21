@@ -14,6 +14,9 @@ docker run -e ENDPOINTINPUT=172.17.0.3:9000 \
 -p 8080:8080 \
 flowbench2024/knative-facerec-final
 
+
+curl -X POST http://knative-vidsplit.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage0", "fileName": "test_00.mp4"}'
+
 curl -X POST http://knative-facerec-final.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage3", "fileName": "test_00-stage-2-2024-07-04-20-14-23-859104-va-monolith-77459f7dd5-kspms.jpg"}'
 
 kubectl logs -f $(kubectl get pods --selector=serving.knative.dev/service=knative-facerec-final -o jsonpath='{.items[0].metadata.name}') -c user-container
@@ -62,3 +65,21 @@ Run the following command
 
 microk8s enable nvidia --gpu-operator-set-as-default-runtime  --gpu-operator-values=gpu-values.yaml
 microk8s enable metallb:10.64.140.43-10.64.140.49
+
+
+To enable PVC in Knative
+
+kubectl patch --namespace knative-serving configmap/config-features \
+ --type merge \
+ --patch '{"data":{"kubernetes.podspec-persistent-volume-claim": "enabled", "kubernetes.podspec-persistent-volume-write": "enabled"}}'
+
+ and use readOnly param in volumeMounts and volums in service.yaml
+ volumeMounts:
+            - name: my-volume
+              mountPath: /mnt/local-storage
+              readOnly: false
+      volumes:
+        - name: my-volume
+          persistentVolumeClaim:
+            claimName: local-storage-claim
+            readOnly: false

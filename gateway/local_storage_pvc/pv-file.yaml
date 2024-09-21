@@ -9,6 +9,6 @@ spec:
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: /home/raghav/local_storage
+    path: /home/tarun/local_storage
   persistentVolumeReclaimPolicy: Retain
   storageClassName: microk8s-hostpath-immediate

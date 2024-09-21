@@ -2,7 +2,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: local-storage-claim
-  namespace: openfaas-fn
+  namespace: default
 spec:
   accessModes:
     - ReadWriteOnce
