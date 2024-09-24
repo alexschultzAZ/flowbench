@@ -7,18 +7,29 @@ export OUTPUTBUCKET=stage4
 
 docker run -e ENDPOINTINPUT=172.17.0.3:9000 \
 -e PUSHGATEWAY_IP=172.17.0.2:9091 \
--e STORAGE_TYPE=obj \
+-e STORAGE_TYPE=local \
 -e MN_FS=false \
 -e OUTPUTBUCKET=stage4 \
 -e ACCELERATION=gpu \
 -p 8080:8080 \
-flowbench2024/knative-facerec-final
+flowbench2024/knative-facextract-new-test_00 /mnt/local-storage
 
+docker run -e ENDPOINTINPUT=172.17.0.3:9000 \
+-e PUSHGATEWAY_IP=172.17.0.2:9091 \
+-e STORAGE_TYPE=local \
+-e MN_FS=false \
+-e OUTPUTBUCKET=stage3 \
+-e ACCELERATION=gpu \
+-e MOUNT_PATH="/mnt/local-storage" \
+-p 8080:8080 \
+-v /home/tarun/local_storage:/mnt/local-storage \
+flowbench2024/knative-facextract-new-test
 
 curl -X POST http://knative-vidsplit.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage0", "fileName": "test_00.mp4"}'
-curl -X POST http://knative-modect.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage1", "fileName": "test_00-stage-1-2024-09-24-22-49-03-827059.zip"}'
-curl -X POST http://knative-facextract.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage2", "fileName": ["test_00-2-1-knative-vidsplit-00001-deployment-846674bbf8-wnh8x-2024-09-24-22-49-03-531747-0002.jpg"]}'
+curl -X POST http://knative-modect.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage1", "fileName": "test_00-stage-1-2024-09-24-23-22-34-814720.zip"}'
+curl -X POST http://knative-facextract.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage2", "fileName": ["test_00-2-1-knative-vidsplit-00001-deployment-d7c776d47-ws4dq-2024-09-24-23-22-34-685095-0002.jpg"]}'
 curl -X POST http://knative-facerec-final.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage3", "fileName": ["test_00-stage-2-2024-09-24-22-50-27-254119-knative-facextract-00001-deployment-5b9d89bdf5-hxxdq.jpg"]}'
+curl -X POST http://172.17.0.4:8080 -H "Content-Type: application/json" -d '{"bucketName": "stage2", "fileName": ["test_00-2-1-knative-vidsplit-00001-deployment-d7c776d47-ws4dq-2024-09-24-23-22-34-685095-0002.jpg"]}'
 
 kubectl logs -f $(kubectl get pods --selector=serving.knative.dev/service=knative-facerec-final -o jsonpath='{.items[0].metadata.name}') -c user-container
 

@@ -64,7 +64,7 @@ def load_from_local_storage(mount_path, input_dir, filename):
     if not os.path.isfile(file_path):
         return f"File '{filename}' does not exist in the directory '{input_dir}'.", False
     return file_path,True
-def store_to_local_storage(mount_path, dir_name, source_dir):
+def store_to_local_storage(mount_path, dir_name, source_dir, all):
     try:
         files = os.listdir(source_dir)
         if len(files) == 0:
@@ -77,6 +77,7 @@ def store_to_local_storage(mount_path, dir_name, source_dir):
             os.makedirs(destination_dir)
         
         for file_name in files:
+            all.append(file_name)
             src_file = os.path.join(source_dir, file_name)
             dst_file = os.path.join(destination_dir, file_name)
             shutil.move(src_file, dst_file)
@@ -167,7 +168,7 @@ def handle(req):
                     if os.path.exists(outdir):
                         shutil.rmtree(outdir)
                 else:
-                    store_to_local_storage(mountPath,outputBucket,outdir)
+                    store_to_local_storage(mountPath,outputBucket,outdir,all)
                 
                 
                 push_to_gateway(pushGateway, job=funcName, registry=registry)
