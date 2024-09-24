@@ -172,13 +172,14 @@ def handle(req):
             upload_end = time.time()
             upload_time_gauge.set(upload_end - upload_start)
             os.remove(new_file)
+            if os.path.exists(outdir):
+                shutil.rmtree(outdir)
         else:
             store_to_local_storage(mountPath,outputBucket,outdir)
 
 
         
-        if os.path.exists(outdir):
-            shutil.rmtree(outdir)
+        
         push_to_gateway(pushGateway, job=funcName, registry=registry)
     response = {"bucketName" : outputBucket, "fileName" : files[0]}
     return response

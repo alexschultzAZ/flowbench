@@ -16,8 +16,9 @@ flowbench2024/knative-facerec-final
 
 
 curl -X POST http://knative-vidsplit.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage0", "fileName": "test_00.mp4"}'
-
-curl -X POST http://knative-facerec-final.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage3", "fileName": "test_00-stage-2-2024-07-04-20-14-23-859104-va-monolith-77459f7dd5-kspms.jpg"}'
+curl -X POST http://knative-modect.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage1", "fileName": "test_00-stage-1-2024-09-24-22-49-03-827059.zip"}'
+curl -X POST http://knative-facextract.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage2", "fileName": ["test_00-2-1-knative-vidsplit-00001-deployment-846674bbf8-wnh8x-2024-09-24-22-49-03-531747-0002.jpg"]}'
+curl -X POST http://knative-facerec-final.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage3", "fileName": ["test_00-stage-2-2024-09-24-22-50-27-254119-knative-facextract-00001-deployment-5b9d89bdf5-hxxdq.jpg"]}'
 
 kubectl logs -f $(kubectl get pods --selector=serving.knative.dev/service=knative-facerec-final -o jsonpath='{.items[0].metadata.name}') -c user-container
 
