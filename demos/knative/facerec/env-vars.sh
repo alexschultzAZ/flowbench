@@ -31,6 +31,8 @@ curl -X POST http://knative-facextract.default.10.64.140.43.sslip.io -H "Content
 curl -X POST http://knative-facerec-final.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage3", "fileName": ["test_00-stage-2-2024-09-24-22-50-27-254119-knative-facextract-00001-deployment-5b9d89bdf5-hxxdq.jpg"]}'
 curl -X POST http://172.17.0.4:8080 -H "Content-Type: application/json" -d '{"bucketName": "stage2", "fileName": ["test_00-2-1-knative-vidsplit-00001-deployment-d7c776d47-ws4dq-2024-09-24-23-22-34-685095-0002.jpg"]}'
 
+curl -X POST  http://vidsplit.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage0", "fileName": "test_00.mp4"}'
+
 kubectl logs -f $(kubectl get pods --selector=serving.knative.dev/service=knative-facerec-final -o jsonpath='{.items[0].metadata.name}') -c user-container
 
 microk8s enable nvidia \

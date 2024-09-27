@@ -1,0 +1,49 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: vidsplit
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+      - env:
+        - name: OUTPUTBUCKET
+          value: stage1
+        - name: write_debug
+          value: 'True'
+        - name: STORAGE_TYPE
+          value: obj
+        - name: MN_FS
+          value: 'False'
+        - name: ENDPOINTINPUT
+          value: 172.17.0.3:9000
+        - name: PUSHGATEWAY_IP
+          value: 172.17.0.2:9091
+        image: flowbench2024/knative-vidsplit-new
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: modect
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+      - env:
+        - name: OUTPUTBUCKET
+          value: stage2
+        - name: STORAGE_TYPE
+          value: obj
+        - name: PIPELINE_STAGE
+          value: '2'
+        - name: MODECT_MIN_AREA
+          value: '5'
+        - name: MODECT_SKIP_RATE
+          value: '1'
+        - name: write_debug
+          value: 'True'
+        - name: MN_FS
+          value: 'False'
+        image: flowbench2024/knative-modect-new

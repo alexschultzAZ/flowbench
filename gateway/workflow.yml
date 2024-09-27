@@ -1,0 +1,33 @@
+document:
+  dsl: 1.0.0-alpha1
+  namespace: vanamespace
+  name: videoanalytics
+  version: 0.1.0
+do:
+  - vidsplit:
+      do:
+        - handle:
+            entry: ../demos/knative/vidsplit
+            execute: true
+      image: flowbench2024/knative-vidsplit-new
+      environment:
+        OUTPUTBUCKET: stage1
+        write_debug: true
+        STORAGE_TYPE: obj
+        MN_FS: false
+        ENDPOINTINPUT: "172.17.0.3:9000"
+        PUSHGATEWAY_IP: "172.17.0.2:9091"
+  - modect:
+      do:
+        - handle:
+            entry: ../demos/knative/modect
+            execute: true
+      image: flowbench2024/knative-modect-new
+      environment:
+        OUTPUTBUCKET: stage2
+        STORAGE_TYPE: obj
+        PIPELINE_STAGE: 2
+        MODECT_MIN_AREA: 5
+        MODECT_SKIP_RATE: 1
+        write_debug: true
+        MN_FS: false

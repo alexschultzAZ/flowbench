@@ -1,0 +1,64 @@
+document:
+  dsl: 1.0.0-alpha1
+  namespace: vanamespace
+  name: videoanalytics
+  version: 0.1.0
+  gateway: 127.0.0.1
+  workflow_logic:
+    name: pipeline
+do:
+  - vidsplit:
+      do:
+        - handle:
+            entry: ../demos/video-analytics-revised/vidsplit
+            execute: true
+      image: flowbench2024/vidsplit:latest
+      order: 1
+      lang: python3
+      environment:
+        OUTPUTBUCKET: stage1
+        write_debug: true
+        STORAGE_TYPE: obj
+        MN_FS: false
+  - modect:
+      do:
+        - handle:
+            entry: ../demos/video-analytics-revised/modect
+            execute: true
+      image: flowbench2024/modect:latest
+      order: 2
+      lang: dockerfile
+      environment:
+        OUTPUTBUCKET: stage2
+        STORAGE_TYPE: obj
+        PIPELINE_STAGE: 2
+        MODECT_MIN_AREA: 5
+        MODECT_SKIP_RATE: 1
+        write_debug: true
+        MN_FS: false
+  - facextract:
+      do:
+        - handle:
+            entry: ../demos/video-analytics-revised/facextract
+            execute: true
+      image: flowbench2024/facextract:latest
+      order: 3
+      lang: dockerfile
+      environment:
+        OUTPUTBUCKET: stage3
+        STORAGE_TYPE: obj
+        write_debug: true
+        MN_FS: false
+  - facerec:
+      do:
+        - handle:
+            entry: ../demos/video-analytics-revised/facerec
+            execute: true
+      image: flowbench2024/facerec:latest
+      order: 4
+      lang: dockerfile
+      environment:
+        OUTPUTBUCKET: stage4
+        STORAGE_TYPE: obj
+        write_debug: true
+        MN_FS: false
