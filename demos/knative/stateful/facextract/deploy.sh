@@ -1,0 +1,1 @@
+sudo docker build -t flowbench2024/knative-facextract-stateful . --push

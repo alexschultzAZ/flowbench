@@ -20,17 +20,6 @@ def parse_yaml(input_yaml):
             })
     return functions
 
-def build_and_push_image(func_name, entry_path, image_name):
-    """Build Docker image and push it to the container registry."""
-    # Build the Docker image
-    build_command = f"docker build -t {image_name} {entry_path}"
-    print(f"Building image for {func_name} from {entry_path}...")
-    subprocess.run(build_command, shell=True, check=True)
-
-    # Push the Docker image
-    push_command = f"docker push {image_name}"
-    print(f"Pushing image {image_name} to registry...")
-    # subprocess.run(push_command, shell=True, check=True)
 
 def create_knative_services_yaml(functions):
     """Create a combined Knative service YAML for all functions."""
@@ -87,16 +76,6 @@ def process_functions(input_yaml):
     # Apply the Knative service YAML
     apply_knative_yaml(knative_yaml_file)
 
-    # for func in functions:
-    #     func_name = func['name']
-    #     entry_path = func['entry']
-    #     image_name = func['image']
-    #     environment = func['environment']
-
-        # Build and push the Docker image
-        # build_and_push_image(func_name, entry_path, image_name)
-
-        # # Create Knative YAML
        
 
 # Specify the input YAML file (the one you provided)
