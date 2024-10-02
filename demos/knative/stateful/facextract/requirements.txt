@@ -3,6 +3,7 @@ opencv-python-headless
 minio
 imutils
 numpy
+requests
 pillow
 facenet-pytorch
 prometheus_client
