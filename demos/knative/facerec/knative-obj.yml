@@ -1,13 +1,13 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: knative-facerec-final
+  name: knative-facerec
   namespace: default
 spec:
   template:
     spec:
       containers:
-      - image: docker.io/flowbench2024/knative-facerec-new
+      - image: docker.io/flowbench2024/knative-facerec-stateless
         resources:
           requests:
             nvidia.com/gpu: "1"  # Request 1 GPU
@@ -25,4 +25,4 @@ spec:
         - name: MN_FS
           value: "false"
         - name: "ACCELERATION"
-          value: "gpu"
+          value: "cpu"
