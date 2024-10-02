@@ -62,8 +62,6 @@ def get_knative_service_url(service_name):
         return None
 
 def invoke_flask_app(limit, invocations, st):
-    function_names = ["knative-vidsplit", "knative-modect", "knative-facextract", "knative-facerec"]
-    # print(get_knative_service_url(function_names[0]))
     
     with open('response_times_knative_va_faas.csv', 'w', newline='') as file:
         writer = csv.writer(file)
@@ -72,8 +70,8 @@ def invoke_flask_app(limit, invocations, st):
         while time.time()  - st <= limit:
             i += 1
             prev_response = {"bucketName": "stage0", "fileName": "test_00.mp4"}
-            for function_name in function_names:
-                prev_response = make_request(i, function_name, writer, json_data = prev_response)
-                # print(f"Prev Response = {type(prev_response)}")
+            # for function_name in function_names:
+            response = make_request(i, "vidsplit", writer, json_data = prev_response)
+            print(f"Final Response = {response}")
 
 invoke_flask_app(limit=60, invocations=3, st=time.time())
