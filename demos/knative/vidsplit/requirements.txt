@@ -1,4 +1,0 @@
-flask
-requests
-minio
-prometheus_client
