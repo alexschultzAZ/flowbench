@@ -57,7 +57,7 @@ do:
         - handle:
             entry: ../demos/knative/facerec
             execute: true
-      image: flowbench2024/knative-facerec-stateless
+      image: flowbench2024/knative-facerec-stateful
       environment:
         OUTPUTBUCKET: stage4
         STORAGE_TYPE: obj

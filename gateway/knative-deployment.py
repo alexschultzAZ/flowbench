@@ -39,6 +39,11 @@ def create_knative_services_yaml(functions):
             },
             'spec': {
                 'template': {
+                    'metadata':{
+                        'annotations':{
+                            'autoscaling.knative.dev/min-scale': "1"
+                        }
+                    },
                     'spec': {
                         'containers': [
                             {

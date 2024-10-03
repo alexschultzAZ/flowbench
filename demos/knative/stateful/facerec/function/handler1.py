@@ -78,7 +78,7 @@ class Face():
         # face = self.mtcnn.extract(img, np.array([[0, 0, img.size[0], img.size[1]]]), save_path=new_pic)
         face, prob = self.mtcnn(img, return_prob=True, save_path=None)
         # saved_data = torch.load('/app/tmp/data.pt')  # loading data.pt file
-        saved_data = torch.load('tmp/data.pt')  # loading data.pt file
+        saved_data = torch.load('/app/tmp/data.pt')  # loading data.pt file
 
         if face != None:
             emb = self.resnet(face.unsqueeze(0)).detach()  # detech is to make required gradient false
