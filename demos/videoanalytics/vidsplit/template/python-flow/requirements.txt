@@ -1,5 +1,0 @@
-minio
-influxdb
-influxdb_client
-requests
-

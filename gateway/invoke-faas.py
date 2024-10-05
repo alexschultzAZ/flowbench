@@ -74,4 +74,4 @@ def invoke_flask_app(limit, invocations, st):
             response = make_request(i, "vidsplit", writer, json_data = prev_response)
             print(f"Final Response = {response}")
 
-invoke_flask_app(limit=1, invocations=3, st=time.time())
+invoke_flask_app(limit=60, invocations=3, st=time.time())

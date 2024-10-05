@@ -1,0 +1,13 @@
+
+
+
+
+
+container_cpu_usage_seconds_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container=~"user-container"}
+
+sum (rate (container_cpu_usage_seconds_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container=~"user-container"}[60s])) / sum (machine_cpu_cores) * 100
+
+container_memory_usage_bytes{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*"}
+
+container_network_transmit_bytes_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*"}
+

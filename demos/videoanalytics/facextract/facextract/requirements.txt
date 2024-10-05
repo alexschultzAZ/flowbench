@@ -1,8 +1,0 @@
-minio
-influxdb
-paho-mqtt
-opencv-python
-imutils
-facenet-pytorch
-numpy
-requests

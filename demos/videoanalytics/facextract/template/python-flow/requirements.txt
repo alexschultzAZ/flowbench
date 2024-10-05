@@ -1,9 +1,0 @@
-minio
-influxdb
-opencv-python
-imutils
-facenet-pytorch==2.5.3
-numpy
-requests
-influxdb_client
-
