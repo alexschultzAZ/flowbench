@@ -1,19 +1,42 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: knative-facextract
+  name: knative-monolith
   namespace: default
 spec:
   template:
     metadata:
       annotations:
-        autoscaling.knative.dev/target: "1"
         autoscaling.knative.dev/minScale: "1"
         autoscaling.knative.dev/maxScale: "10"
     spec:
-      containerConcurrency: 1
       containers:
-        - image: flowbench2024/knative-facextract-new
+        - image: flowbench2024/knative-monolith
           ports:
             - containerPort: 8080
+          env:
+          - name: OUTPUTBUCKET1
+            value: "stage1"
+          - name: OUTPUTBUCKET2
+            value: "stage2"
+          - name: OUTPUTBUCKET3
+            value: "stage3"
+          - name: OUTPUTBUCKET4
+            value: "stage4"
+          - name: STORAGE_TYPE
+            value: "obj"
+          - name: ENDPOINTINPUT
+            value: "172.17.0.3:9000"
+          - name: PUSHGATEWAY_IP
+            value: "172.17.0.2:9091"
+          - name: PIPELINE_STAGE
+            value: "2"
+          - name: MODECT_MIN_AREA
+            value: "5"
+          - name: MODECT_SKIP_RATE
+            value: "1"
+          - name: MN_FS
+            value: "false"
+          - name: "ACCELERATION"
+            value: "gpu"
 

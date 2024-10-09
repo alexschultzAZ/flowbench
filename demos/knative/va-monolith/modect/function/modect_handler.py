@@ -108,7 +108,7 @@ def handle(req):
     outdir = ''
 
     inputMode = os.getenv('INPUTMODE')
-    outputBucket = os.getenv("OUTPUTBUCKET")
+    outputBucket = os.getenv("OUTPUTBUCKET2")
     mount_path = os.getenv("MOUNT_PATH")
     outputMode = os.getenv("OUTPUTMODE")
     storageMode = os.getenv("STORAGE_TYPE")

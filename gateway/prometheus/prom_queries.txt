@@ -3,7 +3,7 @@
 
 
 
-container_cpu_usage_seconds_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container=~"user-container"}
+container_cpu_usage_seconds_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container=~"user-container", job="cadvisor"}
 
 sum (rate (container_cpu_usage_seconds_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container=~"user-container"}[60s])) / sum (machine_cpu_cores) * 100
 
@@ -11,3 +11,4 @@ container_memory_usage_bytes{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*"}
 
 container_network_transmit_bytes_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*"}
 
+rate(container_cpu_usage_seconds_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container=~"user-container", job="cadvisor"}[$__rate_interval])

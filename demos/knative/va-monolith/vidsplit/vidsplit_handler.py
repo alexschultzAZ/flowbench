@@ -51,7 +51,7 @@ def solve(req, original_filename):
 
     ext = "jpg"
     quality = "1"
-    os.chdir("/app/tmp")
+    os.chdir("/app/vidsplit/tmp")
     split_cmd = './ffmpeg -i ' + req + ' -q:v ' + quality + \
                     ' -qmin 1 -qmax 1 ' + output_dir + '/' + \
                     original_filename+'-stage-' + str(stage) + '-' + os.uname()[1] + '-' + \
@@ -174,7 +174,7 @@ def handle(req):
     outdir = ''
     storage_mode = os.getenv('STORAGE_TYPE')
     mount_path = os.getenv('MOUNT_PATH')
-    outputBucket = os.getenv("OUTPUTBUCKET")
+    outputBucket = os.getenv("OUTPUTBUCKET1")
     mn_fs = os.getenv("MN_FS")
     mn_fs = string_to_bool(mn_fs)
     response = {}
@@ -246,12 +246,12 @@ def handle(req):
                 store_end = time.time()
                 upload_time_gauge.set(store_end - store_start)
                 os.remove(new_file)
+                if os.path.exists(outdir):
+                    shutil.rmtree(outdir)
             else:
                 store_to_local_storage(mount_path, outputBucket, outdir)
 
         
-        if os.path.exists(outdir):
-            shutil.rmtree(outdir)
     except Exception as e:
         print('Exception :' + str(e))
         response = {f"Exception: {str(e)}"}
