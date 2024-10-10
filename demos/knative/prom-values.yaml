@@ -3854,13 +3854,13 @@ prometheus:
     ## port to 2379 and allow etcd scraping provided it is running on all Kubernetes master nodes
     ##
     additionalScrapeConfigs:
-      - job_name: 'pushgateway'
-        static_configs:
-          - targets: ['192.168.0.156:9091']
-      - job_name: 'cadvisor'
-        static_configs:
-          - targets: ['192.168.0.156:10255']
-        metrics_path: /metrics/cadvisor
+      # - job_name: 'pushgateway'
+      #   static_configs:
+      #     - targets: ['192.168.0.156:9091']
+      # - job_name: 'cadvisor'
+      #   static_configs:
+      #     - targets: ['192.168.0.156:10255']
+      #   metrics_path: /metrics/cadvisor
 
     # - job_name: kube-etcd
     #   kubernetes_sd_configs:

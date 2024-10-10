@@ -32,7 +32,7 @@ curl -X POST http://knative-facerec.default.10.64.140.43.sslip.io -H "Content-Ty
 curl -X POST http://172.17.0.4:8080 -H "Content-Type: application/json" -d '{"bucketName": "stage2", "fileName": ["test_00-2-1-knative-vidsplit-00001-deployment-d7c776d47-ws4dq-2024-09-24-23-22-34-685095-0002.jpg"]}'
 
 curl -X POST  http://knative-vidsplit-stateful.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage0", "fileName": "test_00.mp4"}'
-curl -X POST  http://knative-vidsplit.default.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage0", "fileName": "test_00.mp4"}'
+curl -X POST  http://vidsplit.default.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage0", "fileName": "test_00.mp4"}'
 
 curl -X POST  http://knative-monolith.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage0", "fileName": "test_00.mp4"}'
 

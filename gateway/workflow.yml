@@ -17,7 +17,7 @@ do:
         STORAGE_TYPE: obj
         MN_FS: false
         ENDPOINTINPUT: "172.17.0.3:9000"
-        PUSHGATEWAY_IP: "172.17.0.2:9091"
+        PUSHGATEWAY_IP: "prom-pushgateway.default.svc.cluster.local:9091"
   - modect:
       do:
         - handle:
@@ -34,7 +34,7 @@ do:
         write_debug: true
         MN_FS: false
         ENDPOINTINPUT: "172.17.0.3:9000"
-        PUSHGATEWAY_IP: "172.17.0.2:9091"
+        PUSHGATEWAY_IP: "prom-pushgateway.default.svc.cluster.local:9091"
   - facextract:
       do:
         - handle:
@@ -51,7 +51,7 @@ do:
         write_debug: true
         MN_FS: false
         ENDPOINTINPUT: "172.17.0.3:9000"
-        PUSHGATEWAY_IP: "172.17.0.2:9091"
+        PUSHGATEWAY_IP: "prom-pushgateway.default.svc.cluster.local:9091"
   - facerec:
       do:
         - handle:
@@ -67,5 +67,5 @@ do:
         write_debug: true
         MN_FS: false
         ENDPOINTINPUT: "172.17.0.3:9000"
-        PUSHGATEWAY_IP: "172.17.0.2:9091"
+        PUSHGATEWAY_IP: "prom-pushgateway.default.svc.cluster.local:9091"
       

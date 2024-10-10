@@ -1,0 +1,20 @@
+{{- if .Values.serviceMonitor.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "prom-pushgateway.fullname" . }}
+  labels:
+    app: {{ include "prom-pushgateway.name" . }}
+    release: {{ .Values.release }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "prom-pushgateway.name" . }}
+  endpoints:
+    - port: http
+      interval: {{ .Values.serviceMonitor.interval }}
+      path: /metrics
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+{{- end -}}

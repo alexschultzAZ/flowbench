@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prom-pushgateway.fullname" . }}
+  labels:
+    app: {{ include "prom-pushgateway.name" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "prom-pushgateway.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "prom-pushgateway.name" . }}
+    spec:
+      containers:
+        - name: pushgateway
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.service.port }}

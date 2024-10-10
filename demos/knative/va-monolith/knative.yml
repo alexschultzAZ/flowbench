@@ -28,7 +28,7 @@ spec:
           - name: ENDPOINTINPUT
             value: "172.17.0.3:9000"
           - name: PUSHGATEWAY_IP
-            value: "172.17.0.2:9091"
+            value: "prom-pushgateway.default.svc.cluster.local:9091"
           - name: PIPELINE_STAGE
             value: "2"
           - name: MODECT_MIN_AREA
