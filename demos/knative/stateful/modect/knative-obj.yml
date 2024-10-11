@@ -1,7 +1,7 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: knative-modect-stateful
+  name: knative-modect
   namespace: default
 spec:
   template:
@@ -9,11 +9,10 @@ spec:
       annotations:
         autoscaling.knative.dev/target: "1"
         autoscaling.knative.dev/minScale: "1"
-        autoscaling.knative.dev/maxScale: "10"
     spec:
       containerConcurrency: 1
       containers:
-        - image: flowbench2024/knative-modect-stateful
+        - image: flowbench2024/knative-modect-stateful-new
           ports:
             - containerPort: 8080
           env:

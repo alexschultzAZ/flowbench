@@ -19,6 +19,7 @@ def hello_world():
     
     # Return the response from the remote service or the result from handler
     return response.text
+    # return ret
 
 
 if __name__ == "__main__":

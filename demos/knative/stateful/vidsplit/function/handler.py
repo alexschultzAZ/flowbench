@@ -169,6 +169,7 @@ def string_to_bool(value):
         return False
 # if __name__ == "__main__":
 def handle(req):
+    start_time = time.time()
     bucket = ''
     file = ''
     outdir = ''
@@ -246,16 +247,17 @@ def handle(req):
                 store_end = time.time()
                 upload_time_gauge.set(store_end - store_start)
                 os.remove(new_file)
+                if os.path.exists(outdir):
+                    shutil.rmtree(outdir)
             else:
                 store_to_local_storage(mount_path, outputBucket, outdir)
 
         
-        if os.path.exists(outdir):
-            shutil.rmtree(outdir)
+        
     except Exception as e:
         print('Exception :' + str(e))
         response = {f"Exception: {str(e)}"}
         # return response
     push_to_gateway(pushGateway, job=funcName, registry=registry)
-    response = {"bucketName" : outputBucket, "fileName" : files[0]}
+    response = {"bucketName" : outputBucket, "fileName" : files[0], "start_time": start_time}
     return response

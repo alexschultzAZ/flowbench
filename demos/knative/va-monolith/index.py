@@ -1,3 +1,4 @@
+import time
 from flask import Flask, request
 app = Flask(__name__)
 
@@ -7,6 +8,7 @@ from facextract.function import facextract_handler
 from facerec.function import facerec_handler
 
 def handle(req):
+    
     output1 = vidsplit_handler.handle(req)
     output2 = modect_handler.handle(output1)
     output3 = facextract_handler.handle(output2)
@@ -16,8 +18,14 @@ def handle(req):
 @app.route('/',methods=["POST"])
 def hello_world():
     print(request.json)
+    start_time = time.time()
     ret = handle(request.json)
-    return ret
+    total_time = time.time() - start_time
+    response = {
+        "result": ret,
+        "time_taken": total_time  # Time taken in seconds
+    }
+    return response
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080)

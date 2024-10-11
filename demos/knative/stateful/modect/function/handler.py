@@ -149,6 +149,7 @@ def handle(req):
         #req = dict(item.split("=") for item in req.split("&"))
             bucket = req["bucketName"]
             file =  req["fileName"]
+            start_time = req["start_time"]
             if storageMode == 'obj':
                 load_start = time.time()
                 new_file = load_from_minio(bucket, file)
@@ -191,12 +192,14 @@ def handle(req):
             upload_end = time.time()
             upload_time_gauge.set(upload_end - upload_start)
             os.remove(new_file)
+            if os.path.exists(outdir):
+                shutil.rmtree(outdir)
         else:
             store_to_local_storage(mount_path,outputBucket,outdir)
 
    
-    if os.path.exists(outdir):
-        shutil.rmtree(outdir)
+    
     push_to_gateway(pushGateway, job=funcName, registry=registry)
-    response = {"bucketName" : outputBucket, "fileName" : files}
+    
+    response = {"bucketName" : outputBucket, "fileName" : files, "start_time": start_time}
     return response

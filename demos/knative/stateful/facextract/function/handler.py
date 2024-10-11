@@ -120,6 +120,7 @@ def handle(req):
     else:
         bucket = req["bucketName"]
         _files = req["fileName"]
+        start_time = req["start_time"]
         for file in _files:
             original_filename = file.split("-")[0]
             if storageMode == 'obj':
@@ -172,5 +173,5 @@ def handle(req):
                 
                 
                 push_to_gateway(pushGateway, job=funcName, registry=registry)
-    response = {"bucketName" : outputBucket, "fileName" : all}
+    response = {"bucketName" : outputBucket, "fileName" : all, "start_time": start_time}
     return response

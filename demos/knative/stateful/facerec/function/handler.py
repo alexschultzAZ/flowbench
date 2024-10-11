@@ -144,6 +144,7 @@ def handle(req):
         storageMode = os.getenv("STORAGE_TYPE")
         bucket = req['bucketName']
         _files = req["fileName"]
+        start_time = req["start_time"]
         for file in _files:
             original_filename = file.split("-")[0]
             if storageMode == 'obj':
@@ -197,5 +198,5 @@ def handle(req):
                     store_to_local_storage(mountPath,outputBucket,outdir,all)
            
     push_to_gateway(pushGateway, job=funcName, registry=registry)
-    response = {"bucketName" : outputBucket, "fileName" : all}
+    response = {"bucketName" : outputBucket, "fileName" : all, "first_stage_start_time": start_time, "total_time": time.time()-(start_time if start_time else time.time())}
     return response 
