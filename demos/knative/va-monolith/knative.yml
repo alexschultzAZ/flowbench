@@ -11,7 +11,7 @@ spec:
         autoscaling.knative.dev/maxScale: "10"
     spec:
       containers:
-        - image: flowbench2024/knative-monolith
+        - image: flowbench2024/knative-monolith-new
           ports:
             - containerPort: 8080
           env:
