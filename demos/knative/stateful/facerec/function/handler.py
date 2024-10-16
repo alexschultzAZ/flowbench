@@ -7,6 +7,7 @@ import os
 import sys
 import time
 import shutil
+from flask import jsonify
 import requests
 from minio import Minio
 from minio.error import InvalidResponseError
@@ -14,6 +15,9 @@ from prometheus_client import Gauge,CollectorRegistry,push_to_gateway
 from .handler1 import *
 from datetime import datetime
 import ast
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 MINIO_ADDRESS = os.environ["ENDPOINTINPUT"]
 minio_client = Minio(
@@ -161,42 +165,47 @@ def handle(req):
                     print('No input file to read')
                     print(response)
                     exit(1)
-            compute_start = time.time()
-            face_fun = Face()
-            outdir, name = face_fun.handler_small(new_file, original_filename)
-            compute_end = time.time()
-            computation_time_gauge.set(compute_end - compute_start)
+    compute_start = time.time()
+    face_fun = Face()
+    outdir, name = face_fun.handler_small(new_file, original_filename)
+    compute_end = time.time()
+    computation_time_gauge.set(compute_end - compute_start)
 
-            if outdir != None and outdir != '':
-                files = os.listdir(outdir)
-                if mn_fs:
-                    file_path = os.path.join(outdir,files[0])
-                    new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
-                    file_content = ''
-                    with open(file_path, "r") as text_file:
-                        file_content = text_file.read()
-                    with open(new_file,"w") as dest_file:
-                        dest_file.write(file_content)
-                    return {
-                        "statusCode": 200,
-                        "body": f"Written to file {files[0]}",
-                        "headers": {
-                            "Content-Type": "image/text",
-                            "Content-Disposition": f"attachment; filename={files[0]}",
-                            "Content-Transfer-Encoding": "base64"
-                        }
+    if outdir != None and outdir != '':
+        files = os.listdir(outdir)
+        if mn_fs:
+            responses = []
+            
+            for file in files:
+                logging.info(f'processing file = {file}')
+                file_path = os.path.join(outdir,file)
+                new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
+                file_content = ''
+                with open(file_path, "r") as text_file:
+                    file_content = text_file.read()
+                with open(new_file,"w") as dest_file:
+                    dest_file.write(file_content)
+                responses.append({
+                    "statusCode": 200,
+                    "body": f"Written to file {file}",
+                    "headers": {
+                        "Content-Type": "image/text",
+                        "Content-Disposition": f"attachment; filename={file}",
+                        "Content-Transfer-Encoding": "base64"
                     }
-                if storageMode == 'obj':
-                    upload_start = time.time()
-                    store_to_minio(outputBucket, outdir,all)
-                    upload_end = time.time()
-                    upload_time_gauge.set(upload_end - upload_start)
-                    #os.remove(new_file)
-                    if os.path.exists(outdir):
-                        shutil.rmtree(outdir)
-                else:
-                    store_to_local_storage(mountPath,outputBucket,outdir,all)
-           
+                })
+            return jsonify({"responses": responses})
+        if storageMode == 'obj':
+            upload_start = time.time()
+            store_to_minio(outputBucket, outdir,all)
+            upload_end = time.time()
+            upload_time_gauge.set(upload_end - upload_start)
+            #os.remove(new_file)
+            if os.path.exists(outdir):
+                shutil.rmtree(outdir)
+        else:
+            store_to_local_storage(mountPath,outputBucket,outdir,all)
+    
     push_to_gateway(pushGateway, job=funcName, registry=registry)
     response = {"bucketName" : outputBucket, "fileName" : all, "first_stage_start_time": start_time, "total_time": time.time()-(start_time if start_time else time.time())}
     return response 

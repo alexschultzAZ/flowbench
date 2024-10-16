@@ -3,5 +3,6 @@ minio
 imutils
 numpy
 pillow
+flask
 facenet-pytorch
 prometheus_client

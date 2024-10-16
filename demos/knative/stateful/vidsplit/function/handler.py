@@ -247,10 +247,12 @@ def handle(req):
                     },
                     "start_time": start_time
                 }
+                logging.info('sending request to modect')
                 result = requests.post(next_url, json = fileBody)
                 logging.info(f"Received result from next_func: {result.text}")
                 if result.status_code == 200:
                     result.text
+                return {"message": "something went wrong"}
             if storage_mode == 'obj':
                 store_start = time.time()
                 store_to_minio(outputBucket, outdir)
@@ -265,7 +267,7 @@ def handle(req):
         
         
     except Exception as e:
-        print('Exception :' + str(e))
+        logging.error(f'Exception : {str(e)}')
         response = {f"Exception: {str(e)}"}
     push_to_gateway(pushGateway, job=funcName, registry=registry)
     response = {"bucketName" : outputBucket, "fileName" : files[0], "start_time": start_time}

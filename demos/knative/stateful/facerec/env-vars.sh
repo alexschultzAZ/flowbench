@@ -38,8 +38,11 @@ curl -X POST  http://vidsplit.default.sslip.io -H "Content-Type: application/jso
 curl -X POST  http://knative-monolith.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage0", "fileName": "test_00.mp4"}'
 curl -X POST  http://knative-vidsplit.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage0", "fileName": "test_00.mp4"}'
 
+curl -X POST  http://kn-vidsplit-stateful.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage0", "fileName": "test_00.mp4"}'
+curl -X POST  http://172.17.0.6:8080 -H "Content-Type: application/json" -d '{"bucketName": "stage0", "fileName": "test_00.mp4"}'
+
 kubectl logs -f $(kubectl get pods --selector=serving.knative.dev/service=knative-monolith -o jsonpath='{.items[0].metadata.name}') -c user-container
-kubectl logs -f $(kubectl get pods --selector=serving.knative.dev/service=modect -o jsonpath='{.items[0].metadata.name}') -c user-container
+kubectl logs -f $(kubectl get pods --selector=serving.knative.dev/service=kn-modect -o jsonpath='{.items[0].metadata.name}') -c user-container
 
 microk8s enable nvidia \
   --gpu-operator-set validator.driver.env[0].name=DISABLE_DEV_CHAR_SYMLINK_CREATION \
