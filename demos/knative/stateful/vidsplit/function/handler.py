@@ -12,6 +12,11 @@ from zipfile import ZIP_STORED
 import subprocess
 import ast
 import math
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
+import requests
 
 MINIO_ADDRESS = os.getenv("ENDPOINTINPUT")
 minio_client = Minio(
@@ -176,6 +181,7 @@ def handle(req):
     storage_mode = os.getenv('STORAGE_TYPE')
     mount_path = os.getenv('MOUNT_PATH')
     outputBucket = os.getenv("OUTPUTBUCKET")
+    next_url = os.getenv("NEXT_URL")
     mn_fs = os.getenv("MN_FS")
     mn_fs = string_to_bool(mn_fs)
     response = {}
@@ -187,7 +193,7 @@ def handle(req):
     upload_time_gauge = Gauge(f'minio_write_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
     computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
     try:
-        print("hello")
+        logging.info("hello")
         if storage_mode == 'http':
             file = os.getenv("Http_Referer")
             new_file = f"/tmp/{datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}-{file}"
@@ -232,15 +238,19 @@ def handle(req):
                     zip_content = zip_file.read()
                 
                 zip_base64 = base64.b64encode(zip_content).decode('utf-8')
-                return {
-                    "statusCode": 200,
+                fileBody = {
                     "body": zip_base64,
                     "headers": {
                         "Content-Type": "application/zip",
                         "Content-Disposition": f"attachment; filename={files[0]}",
                         "Content-Transfer-Encoding": "base64"
-                    }
+                    },
+                    "start_time": start_time
                 }
+                result = requests.post(next_url, json = fileBody)
+                logging.info(f"Received result from next_func: {result.text}")
+                if result.status_code == 200:
+                    result.text
             if storage_mode == 'obj':
                 store_start = time.time()
                 store_to_minio(outputBucket, outdir)
@@ -257,7 +267,6 @@ def handle(req):
     except Exception as e:
         print('Exception :' + str(e))
         response = {f"Exception: {str(e)}"}
-        # return response
     push_to_gateway(pushGateway, job=funcName, registry=registry)
     response = {"bucketName" : outputBucket, "fileName" : files[0], "start_time": start_time}
     return response

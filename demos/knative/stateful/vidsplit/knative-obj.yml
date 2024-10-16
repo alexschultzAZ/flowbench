@@ -1,7 +1,7 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: knative-vidsplit
+  name: kn-vidsplit
   namespace: default
 spec:
   template:
@@ -12,12 +12,12 @@ spec:
     spec:
       # containerConcurrency: 1
       containers:
-        - image: flowbench2024/knative-vidsplit-stateful-new
+        - image: flowbench2024/kn-vidsplit
           ports:
             - containerPort: 8080
           env:
           - name: NEXT_URL
-            value: "http://knative-modect.default.svc.cluster.local"
+            value: "http://kn-modect.default.svc.cluster.local"
           - name: OUTPUTBUCKET
             value: "stage1"
           - name: STORAGE_TYPE
@@ -27,7 +27,7 @@ spec:
           - name: PUSHGATEWAY_IP
             value: prom-pushgateway.default.svc.cluster.local:9091
           - name: MN_FS
-            value: "false"
+            value: "true"
           - name: "ACCELERATION"
             value: "cpu"
          

@@ -9,6 +9,8 @@ import json
 from prometheus_client import Gauge,CollectorRegistry,push_to_gateway
 from minio.error import InvalidResponseError
 from datetime import datetime
+
+import requests
 from .handle import solve
 
 MINIO_ADDRESS = os.getenv("ENDPOINTINPUT")
@@ -113,6 +115,7 @@ def handle(req):
     outputMode = os.getenv("OUTPUTMODE")
     storageMode = os.getenv("STORAGE_TYPE")
     pushGateway = os.getenv("PUSHGATEWAY_IP")
+    next_url = os.getenv("NEXT_URL")
     mn_fs = os.getenv("MN_FS")
     mn_fs = string_to_bool(mn_fs)
     registry = CollectorRegistry()
@@ -177,15 +180,18 @@ def handle(req):
             with open(image_path, "rb") as image_file:
                 image_data = image_file.read()
             image_base64 = base64.b64encode(image_data).decode('utf-8')
-            return {
-                "statusCode": 200,
+            request_body = {
                 "body": image_base64,
                 "headers": {
                     "Content-Type": "image/jpeg",
                     "Content-Disposition": f"attachment; filename={files[0]}",
                     "Content-Transfer-Encoding": "base64"
-                }
+                },
+                "start_time": req['start_time']
             } 
+            response = requests.post(next_url, json = request_body)
+            if response.status_code == 200:
+                return response.text
         if storageMode == 'obj':
             upload_start = time.time()
             store_to_minio(outputBucket, outdir)

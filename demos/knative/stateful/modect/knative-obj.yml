@@ -1,7 +1,7 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: knative-modect
+  name: kn-modect
   namespace: default
 spec:
   template:
@@ -12,7 +12,7 @@ spec:
     spec:
       containerConcurrency: 1
       containers:
-        - image: flowbench2024/knative-modect-stateful-new
+        - image: flowbench2024/kn-modect
           ports:
             - containerPort: 8080
           env:
