@@ -1,0 +1,7 @@
+flask
+minio
+imutils
+requests
+numpy
+opencv-python-headless
+prometheus_client

@@ -9,6 +9,6 @@ spec:
     - port: {{ .Values.service.port }}
       targetPort: 9091
       protocol: TCP
-      name: http
+      name: http  
   selector:
     app: {{ include "prom-pushgateway.name" . }}

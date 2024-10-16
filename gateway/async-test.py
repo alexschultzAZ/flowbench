@@ -16,7 +16,7 @@ async def make_request(i, function_name, session):
     json_data = {"bucketName": "stage0", "fileName": "test_00.mp4"}
     async with session.post(url=service_url, json=json_data) as response:
         # elapsed_time = response.elapsed.total_seconds() if response.elapsed else 0
-        print(f"Invocation {i + 1} at {datetime.now().time()}: Status code {response.status}")
+        # print(f"Invocation {i + 1} at {datetime.now().time()}: Status code {response.status}")
         if response.status == 200:
             try:
                 return await response.text()
@@ -57,11 +57,11 @@ async def invoke_flask_app(invocations):
     async with aiohttp.ClientSession() as session:
         tasks = []
         for i in range(invocations):
-            tasks.append(asyncio.ensure_future(make_request(i, "vidsplit", session)))
+            tasks.append(asyncio.ensure_future(make_request(i, "knative-vidsplit", session)))
         responses = await asyncio.gather(*tasks)
-        for resp in responses:
-            print(resp)
+        # for resp in responses:
+        #     print(resp)
 
 if __name__ == "__main__":
-    invocation_count = 150  # Specify the number of invocations
+    invocation_count = 150 # Specify the number of invocations
     asyncio.run(invoke_flask_app(invocation_count))
