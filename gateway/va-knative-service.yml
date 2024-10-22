@@ -1,7 +1,7 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: knative-vidsplit
+  name: kn-vidsplit-stateless
   namespace: default
 spec:
   template:
@@ -12,7 +12,7 @@ spec:
       containers:
       - env:
         - name: NEXT_URL
-          value: http://knative-modect.default.svc.cluster.local
+          value: http://kn-modect-stateless.default.svc.cluster.local
         - name: OUTPUTBUCKET
           value: stage1
         - name: write_debug
@@ -25,12 +25,12 @@ spec:
           value: 172.17.0.3:9000
         - name: PUSHGATEWAY_IP
           value: prom-pushgateway.default.svc.cluster.local:9091
-        image: flowbench2024/knative-vidsplit-stateful-new
+        image: flowbench2024/kn-vidsplit-stateless
 ---
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: knative-modect
+  name: kn-modect-stateless
   namespace: default
 spec:
   template:
@@ -41,7 +41,7 @@ spec:
       containers:
       - env:
         - name: NEXT_URL
-          value: http://knative-facextract.default.svc.cluster.local
+          value: http://kn-facextract-stateless.default.svc.cluster.local
         - name: OUTPUTBUCKET
           value: stage2
         - name: STORAGE_TYPE
@@ -60,12 +60,12 @@ spec:
           value: 172.17.0.3:9000
         - name: PUSHGATEWAY_IP
           value: prom-pushgateway.default.svc.cluster.local:9091
-        image: flowbench2024/knative-modect-stateful-new
+        image: flowbench2024/kn-modect-stateless
 ---
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: knative-facextract
+  name: kn-facextract-stateless
   namespace: default
 spec:
   template:
@@ -76,7 +76,7 @@ spec:
       containers:
       - env:
         - name: NEXT_URL
-          value: http://knative-facerec.default.svc.cluster.local
+          value: http://kn-facerec-stateless.default.svc.cluster.local
         - name: OUTPUTBUCKET
           value: stage3
         - name: STORAGE_TYPE
@@ -95,12 +95,12 @@ spec:
           value: 172.17.0.3:9000
         - name: PUSHGATEWAY_IP
           value: prom-pushgateway.default.svc.cluster.local:9091
-        image: flowbench2024/knative-facextract-stateful-new
+        image: flowbench2024/kn-facextract-stateless
 ---
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: knative-facerec
+  name: kn-facerec-stateless
   namespace: default
 spec:
   template:
@@ -128,4 +128,4 @@ spec:
           value: 172.17.0.3:9000
         - name: PUSHGATEWAY_IP
           value: prom-pushgateway.default.svc.cluster.local:9091
-        image: flowbench2024/knative-facerec-stateful-new
+        image: flowbench2024/kn-facerec-stateless

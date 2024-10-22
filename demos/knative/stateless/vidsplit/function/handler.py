@@ -13,6 +13,10 @@ import subprocess
 import ast
 import math
 
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
 MINIO_ADDRESS = os.getenv("ENDPOINTINPUT")
 minio_client = Minio(
     MINIO_ADDRESS,
@@ -37,11 +41,11 @@ def load_from_bucket():
 #         minioClient.fget_object(bucket, file, output_dir + '/' + file)
 #         return output_dir + '/' + file
 #     except:
-#         print("failed to download %s" % file)
+#         logging.info("failed to download %s" % file)
 
 # ffmpeg -i stage-1-input.mp4 -q:v 1 -qmin 1 -qmax 1 tst/output_%01d.jpg
 def solve(req, original_filename):
-    #print("stage 1 vidsplit...")
+    #logging.info("stage 1 vidsplit...")
     output_dir = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -66,7 +70,7 @@ def solve(req, original_filename):
     gid = 1
     fid = 0
     pics = sorted(os.listdir(output_dir))
-    print(f"num of pics sampled in the output directory = {len(os.listdir(output_dir))}")
+    logging.info(f"num of pics sampled in the output directory = {len(os.listdir(output_dir))}")
     prefix = output_dir + "/"+ original_filename +'-stage-' + stage + '-' + \
                     datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
     # while fid < len(pics):
@@ -105,7 +109,7 @@ def store_to_minio(bucket, ret):
         for file in files:
             minio_client.fput_object(bucket, file, os.path.join(ret, file))
     except InvalidResponseError as err:
-        print(err)
+        logging.info(err)
 
 def load_from_minio(bucket, file):
     try:
@@ -120,7 +124,7 @@ def get_stdin():
     while True:
         line = sys.stdin.readline()
         buf += line
-        #print(line)
+        #logging.info(line)
         if line == "":
             break
     return buf
@@ -157,11 +161,11 @@ def store_to_local_storage(mount_path, dir_name, source_dir):
             dst_file = os.path.join(destination_dir, file_name)
             shutil.move(src_file, dst_file)
     except PermissionError as e:
-        print(f"PermissionError: {e}")
+        logging.info(f"PermissionError: {e}")
     except FileNotFoundError as e:
-        print(f"FileNotFoundError: {e}")
+        logging.info(f"FileNotFoundError: {e}")
     except Exception as e:
-        print(f"Error: {e}")
+        logging.info(f"Error: {e}")
 def string_to_bool(value):
     try:
         return ast.literal_eval(value.capitalize())
@@ -186,8 +190,9 @@ def handle(req):
     download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
     upload_time_gauge = Gauge(f'minio_write_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
     computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
+    total_time_gauge = Gauge(f'time_taken_{funcName}', f'Time took to process this {funcName}', registry=registry)
     try:
-        print("hello")
+        
         if storage_mode == 'http':
             file = os.getenv("Http_Referer")
             new_file = f"/tmp/{datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}-{file}"
@@ -196,13 +201,7 @@ def handle(req):
 
             outdir = solve(new_file, file.split(".")[0])
         else:
-            # print("Enter")
-            # st = get_stdin()
-            # bucket, file = st.split(' ')
-            # file = file.rstrip("\n")
-            # print(file)
-            #print(req)
-            #req = dict(item.split("=") for item in req.split("&"))
+            
             bucket = req["bucketName"]
             file = req["fileName"]
             if storage_mode == 'local':
@@ -211,8 +210,8 @@ def handle(req):
                     new_file = response_msg
                     outdir = solve(new_file, file.split(".")[0])
                 else:
-                    print('No input file to read')
-                    print(response_msg)
+                    logging.info('No input file to read')
+                    logging.info(response_msg)
                     exit(1)
             else: 
                 load_start = time.time()
@@ -255,9 +254,10 @@ def handle(req):
         
         
     except Exception as e:
-        print('Exception :' + str(e))
+        logging.info('Exception :' + str(e))
         response = {f"Exception: {str(e)}"}
-        # return response
+    
+    total_time_gauge.set(time.time() - start_time)
     push_to_gateway(pushGateway, job=funcName, registry=registry)
-    response = {"bucketName" : outputBucket, "fileName" : files[0], "start_time": start_time}
+    response = {"bucketName" : outputBucket, "fileName" : files[0], "pipeline_start_time": start_time}
     return response

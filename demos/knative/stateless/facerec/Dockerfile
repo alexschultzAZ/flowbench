@@ -16,19 +16,26 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     ca-certificates
 
-# Install Python packages including PyTorch
+
+WORKDIR /app
+
 RUN python3 -m pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+ADD requirements.txt /app
 
-ENV APP_HOME /app
-WORKDIR $APP_HOME
-COPY . ./
+RUN pip install -r requirements.txt
 
+ADD . /app
 
-# Install Python dependencies
-RUN python3 -m pip install -r requirements.txt
-RUN pip install Flask gunicorn
-# Expose the port your Python application runs on
+ENV OUTPUTBUCKET="stage4"
+ENV STORAGE_TYPE="obj"
+ENV ENDPOINTINPUT="172.17.0.3:9000"
+ENV PUSHGATEWAY_IP="172.17.0.2:9091"
+ENV PIPELINE_STAGE="2"
+ENV MODECT_MIN_AREA="5"
+ENV MODECT_SKIP_RATE="1"
+ENV MN_FS="false"
+ENV ACCELERATION="cpu"
+
 EXPOSE 8080
 
-# Command to run the Flask application with Gunicorn
-CMD ["gunicorn", "--bind", ":8080", "--workers", "1", "--threads", "8", "--timeout", "0", "app:app"]
+CMD ["python", "index.py"]

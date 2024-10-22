@@ -15,6 +15,10 @@ from .handler1 import *
 from datetime import datetime
 import ast
 
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
 MINIO_ADDRESS = os.environ["ENDPOINTINPUT"]
 minio_client = Minio(
     MINIO_ADDRESS,
@@ -29,7 +33,7 @@ def load_from_minio(bucket, file):
         minio_client.fget_object(bucket, file, new_file)
         return new_file
     except InvalidResponseError as err:
-        print(err)
+        logging.info(err)
 
 def store_to_minio(bucket, ret):
     files = os.listdir(ret)
@@ -43,7 +47,7 @@ def store_to_minio(bucket, ret):
             minio_client.fput_object(bucket, file, file)
         return
     except InvalidResponseError as err:
-        print(err)
+        logging.info(err)
 
 def get_stdin():
     buf = ""
@@ -67,7 +71,7 @@ def store_to_minio(bucket, ret,all):
             all.append(file)
         return
     except InvalidResponseError as err:
-        print(err)
+        logging.info(err)
 
 def store_to_local_storage(mount_path, dir_name, source_dir,all):
     try:
@@ -87,11 +91,11 @@ def store_to_local_storage(mount_path, dir_name, source_dir,all):
             dst_file = os.path.join(destination_dir, file_name)
             shutil.move(src_file, dst_file)
     except PermissionError as e:
-        print(f"PermissionError: {e}")
+        logging.info(f"PermissionError: {e}")
     except FileNotFoundError as e:
-        print(f"FileNotFoundError: {e}")
+        logging.info(f"FileNotFoundError: {e}")
     except Exception as e:
-        print(f"Error: {e}")
+        logging.info(f"Error: {e}")
 
 
 def load_from_local_storage(mount_path, input_dir, filename):
@@ -115,6 +119,7 @@ def string_to_bool(value):
         return False
 # if __name__ == "__main__":
 def handle(req):
+    function_start_time = time.time()
     load_start = 0
     load_end = 0
     _files = []
@@ -130,6 +135,10 @@ def handle(req):
     download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
     upload_time_gauge = Gauge(f'minio_write_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
     computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
+    total_time_gauge = Gauge(f'time_taken_{funcName}', f'Time took to process this {funcName}', registry=registry)
+
+    pipeline_total_time_gauge = Gauge(f'pipeline_time_taken', f'Time took to process the entire pipeline', registry=registry)
+
     if mn_fs:
         image_data = base64.b64decode(req["body"])
         file = req["headers"]["Content-Disposition"].split(";")[1].split("=")[1]
@@ -144,7 +153,7 @@ def handle(req):
         storageMode = os.getenv("STORAGE_TYPE")
         bucket = req['bucketName']
         _files = req["fileName"]
-        start_time = req["start_time"]
+        pipeline_start_time = req["pipeline_start_time"]
         for file in _files:
             original_filename = file.split("-")[0]
             if storageMode == 'obj':
@@ -158,8 +167,8 @@ def handle(req):
                 if isPresent:
                     new_file = response
                 else:
-                    print('No input file to read')
-                    print(response)
+                    logging.info('No input file to read')
+                    logging.info(response)
                     exit(1)
             compute_start = time.time()
             face_fun = Face()
@@ -196,7 +205,8 @@ def handle(req):
                         shutil.rmtree(outdir)
                 else:
                     store_to_local_storage(mountPath,outputBucket,outdir,all)
-           
+    total_time_gauge.set(time.time() - function_start_time)
+    pipeline_total_time_gauge.set(time.time() - pipeline_start_time)
     push_to_gateway(pushGateway, job=funcName, registry=registry)
-    response = {"bucketName" : outputBucket, "fileName" : all, "first_stage_start_time": start_time, "total_time": time.time()-(start_time if start_time else time.time())}
+    response = {"bucketName" : outputBucket, "fileName" : all, "pipeline_start_time": pipeline_start_time, "total_time": time.time()-(pipeline_start_time if pipeline_start_time else time.time())}
     return response 

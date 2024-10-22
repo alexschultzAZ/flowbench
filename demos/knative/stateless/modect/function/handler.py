@@ -5,11 +5,14 @@ import time
 import shutil
 import ast
 from minio import Minio
-import json
 from prometheus_client import Gauge,CollectorRegistry,push_to_gateway
 from minio.error import InvalidResponseError
 from datetime import datetime
 from .handle import solve
+
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 MINIO_ADDRESS = os.getenv("ENDPOINTINPUT")
 minio_client = Minio(
@@ -29,7 +32,7 @@ def store_to_minio(bucket, ret):
             minio_client.fput_object(bucket, file, file)
         return
     except InvalidResponseError as err:
-        print(err)
+        logging.info(err)
 
 
 def load_from_minio(bucket, file):
@@ -38,7 +41,7 @@ def load_from_minio(bucket, file):
         minio_client.fget_object(bucket, file, new_file)
         return new_file
     except InvalidResponseError as err:
-        print(err)
+        logging.info(err)
 
 def get_stdin():
     buf = ""
@@ -66,11 +69,11 @@ def store_to_local_storage(mount_path, dir_name, source_dir):
             dst_file = os.path.join(destination_dir, file_name)
             shutil.move(src_file, dst_file)
     except PermissionError as e:
-        print(f"PermissionError: {e}")
+        logging.info(f"PermissionError: {e}")
     except FileNotFoundError as e:
-        print(f"FileNotFoundError: {e}")
+        logging.info(f"FileNotFoundError: {e}")
     except Exception as e:
-        print(f"Error: {e}")
+        logging.info(f"Error: {e}")
 
 
 def load_from_local_storage(mount_path, input_dir, filename):
@@ -95,6 +98,7 @@ def string_to_bool(value):
         return False
 def handle(req):
     request_start_ts = str(round(time.time() * 1000000000))
+    function_start_time= time.time()
     compute_start = 0
     compute_end = 0
     store_start = 0
@@ -120,6 +124,8 @@ def handle(req):
     download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
     upload_time_gauge = Gauge(f'minio_write_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
     computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
+    total_time_gauge = Gauge(f'time_taken_{funcName}', f'Time took to process this {funcName}', registry=registry)
+
     if storageMode == 'http':
         file = os.getenv("Http_Referer")
         new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
@@ -137,7 +143,7 @@ def handle(req):
         # file = st.split(' ')[1].rstrip("\n")
         if mn_fs:
             # reqJSON = ast.literal_eval(req)
-            # print(type(reqJSON))
+            # logging.info(type(reqJSON))
             decodedFile = base64.b64decode(req["body"])
             file = req["headers"]["Content-Disposition"].split(";")[1].split("=")[1]
             new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
@@ -149,7 +155,7 @@ def handle(req):
         #req = dict(item.split("=") for item in req.split("&"))
             bucket = req["bucketName"]
             file =  req["fileName"]
-            start_time = req["start_time"]
+            pipeline_start_time = req["pipeline_start_time"]
             if storageMode == 'obj':
                 load_start = time.time()
                 new_file = load_from_minio(bucket, file)
@@ -166,8 +172,8 @@ def handle(req):
                     new_file = response_msg
                     outdir = solve(response_msg)
                 else:
-                    print('No input file to read')
-                    print(response_msg)
+                    logging.info('No input file to read')
+                    logging.info(response_msg)
                     exit(1)
 
     if outdir != None and outdir != '':
@@ -198,8 +204,9 @@ def handle(req):
             store_to_local_storage(mount_path,outputBucket,outdir)
 
    
+    total_time_gauge.set(time.time() - function_start_time)
     
     push_to_gateway(pushGateway, job=funcName, registry=registry)
     
-    response = {"bucketName" : outputBucket, "fileName" : files, "start_time": start_time}
+    response = {"bucketName" : outputBucket, "fileName" : files, "pipeline_start_time": pipeline_start_time}
     return response
