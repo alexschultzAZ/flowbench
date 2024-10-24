@@ -6,12 +6,8 @@ import aiohttp
 import csv
 from datetime import datetime
 
-async def make_request(i, function_name, session):
-    service_url = get_knative_service_url(function_name)
-    # print(f"Service URL is {service_url}")
-    if service_url is None:
-        print(f"URL for service {function_name} not found.... skipping!!")
-        return
+async def make_request(i, service_url, session):
+    
     
     json_data = {"bucketName": "stage0", "fileName": "test_00.mp4"}
     async with session.post(url=service_url, json=json_data) as response:
@@ -54,14 +50,20 @@ def get_knative_service_url(service_name):
         return None
 
 async def invoke_flask_app(invocations):
+    function_name = "kn-vidsplit-stateless"
+    service_url = get_knative_service_url(function_name)
+    # print(f"Service URL is {service_url}")
+    if service_url is None:
+        print(f"URL for service {function_name} not found.... skipping!!")
+        return
     async with aiohttp.ClientSession() as session:
         tasks = []
         for i in range(invocations):
-            tasks.append(asyncio.ensure_future(make_request(i, "knative-vidsplit", session)))
+            tasks.append(asyncio.ensure_future(make_request(i, service_url, session)))
         responses = await asyncio.gather(*tasks)
         # for resp in responses:
         #     print(resp)
 
 if __name__ == "__main__":
-    invocation_count = 150 # Specify the number of invocations
+    invocation_count = 120 # Specify the number of invocations
     asyncio.run(invoke_flask_app(invocation_count))

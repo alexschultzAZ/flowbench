@@ -95,6 +95,7 @@ class Face():
             return output_dir, name_list[idx_min]
         else:
             print(f"No face is detected")
+            return None,None
         #t1 = time.perf_counter()
         #record = [[str(t1 - t0)]]
         #self.store_to_minio(os.environ["OUTPUTBUCKET"], output_dir, record)
