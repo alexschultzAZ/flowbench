@@ -119,6 +119,7 @@ def string_to_bool(value):
         return False
 # if __name__ == "__main__":
 def handle(req):
+    start_time = time.time()
     load_start = 0
     load_end = 0
     _files = []
@@ -134,6 +135,8 @@ def handle(req):
     download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
     upload_time_gauge = Gauge(f'minio_write_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
     computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
+    total_time_gauge = Gauge(f'time_taken_{funcName}', f'Time took to process this {funcName}', registry=registry)
+    pipeline_total_time_gauge = Gauge(f'pipeline_total_time_taken', f'Time took to process the entire pipeline', registry=registry)
     if mn_fs:
         image_data = base64.b64decode(req["body"])
         file = req["headers"]["Content-Disposition"].split(";")[1].split("=")[1]
@@ -148,7 +151,7 @@ def handle(req):
         storageMode = os.getenv("STORAGE_TYPE")
         bucket = req['bucketName']
         _files = req["fileName"]
-        start_time = req["start_time"]
+        pipeline_start_time = req["pipeline_start_time"]
         for file in _files:
             original_filename = file.split("-")[0]
             if storageMode == 'obj':
@@ -174,27 +177,25 @@ def handle(req):
     if outdir != None and outdir != '':
         files = os.listdir(outdir)
         if mn_fs:
-            responses = []
+            file_path = os.path.join(outdir,files[0])
+            new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
+            file_content = ''
+            with open(file_path, "r") as text_file:
+                file_content = text_file.read()
+            with open(new_file,"w") as dest_file:
+                dest_file.write(file_content)
             
-            for file in files:
-                logging.info(f'processing file = {file}')
-                file_path = os.path.join(outdir,file)
-                new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
-                file_content = ''
-                with open(file_path, "r") as text_file:
-                    file_content = text_file.read()
-                with open(new_file,"w") as dest_file:
-                    dest_file.write(file_content)
-                responses.append({
-                    "statusCode": 200,
-                    "body": f"Written to file {file}",
-                    "headers": {
-                        "Content-Type": "image/text",
-                        "Content-Disposition": f"attachment; filename={file}",
-                        "Content-Transfer-Encoding": "base64"
-                    }
-                })
-            return jsonify({"responses": responses})
+            total_time_gauge.set(time.time() - start_time)
+            pipeline_total_time_gauge.set(time.time() - req['pipeline_start_time'])
+            push_to_gateway(pushGateway, job=funcName, registry=registry)
+            return {
+                "body": f"Written to file {files[0]}",
+                "headers": {
+                    "Content-Type": "image/text",
+                    "Content-Disposition": f"attachment; filename={files[0]}",
+                    "Content-Transfer-Encoding": "base64"
+                }
+            } 
         if storageMode == 'obj':
             upload_start = time.time()
             store_to_minio(outputBucket, outdir,all)

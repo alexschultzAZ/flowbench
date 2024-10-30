@@ -100,6 +100,7 @@ def string_to_bool(value):
     except (ValueError, SyntaxError):
         return False
 def handle(req):
+    start_time = time.time()
     request_start_ts = str(round(time.time() * 1000000000))
     compute_start = 0
     compute_end = 0
@@ -127,6 +128,9 @@ def handle(req):
     download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
     upload_time_gauge = Gauge(f'minio_write_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
     computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
+    total_time_gauge = Gauge(f'time_taken_{funcName}', f'Time took to process this {funcName}', registry=registry)
+
+
     if storageMode == 'http':
         file = os.getenv("Http_Referer")
         new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
@@ -156,7 +160,7 @@ def handle(req):
         #req = dict(item.split("=") for item in req.split("&"))
             bucket = req["bucketName"]
             file =  req["fileName"]
-            start_time = req["start_time"]
+            pipeline_start_time = req["pipeline_start_time"]
             if storageMode == 'obj':
                 load_start = time.time()
                 new_file = load_from_minio(bucket, file)
@@ -180,31 +184,23 @@ def handle(req):
     if outdir != None and outdir != '':
         files = os.listdir(outdir)
         if mn_fs:
-            zip_file_path = "/tmp/processed_images.zip"
-    
-            # Step 1: Create a ZIP file and add the JPEG images to it
-            with zipfile.ZipFile(zip_file_path, 'w') as zip_file:
-                for file in files:
-                    logging.info(f'Adding {file} to ZIP')
-                    image_path = os.path.join(outdir, file)
-                    zip_file.write(image_path, arcname=file)  # arcname to avoid including the full path
-
-            # Step 2: Read the ZIP file and encode it in Base64
-            with open(zip_file_path, "rb") as zip_file:
-                zip_data = zip_file.read()
-            zip_base64 = base64.b64encode(zip_data).decode('utf-8')
-
-            # Prepare the request body
+            image_path = os.path.join(outdir,files[0])
+            with open(image_path, "rb") as image_file:
+                image_data = image_file.read()
+            image_base64 = base64.b64encode(image_data).decode('utf-8')
             request_body = {
-                "body": zip_base64,
+                "body": image_base64,
                 "headers": {
-                    "Content-Type": "application/zip",
-                    "Content-Disposition": "attachment; filename=processed_images.zip",
+                    "Content-Type": "image/jpeg",
+                    "Content-Disposition": f"attachment; filename={files[0]}",
                     "Content-Transfer-Encoding": "base64"
                 },
-                "start_time": req['start_time']  # Assuming start_time is passed in the request body
-            }
+                "pipeline_start_time": req['pipeline_start_time']
+            } 
             response = requests.post(next_url, json=request_body)
+            total_time = time.time() - start_time
+            total_time_gauge.set(total_time)
+            push_to_gateway(pushGateway, job=funcName, registry=registry)
             if response and response.status_code == 200:
                 return response.text
             return {"message": "something went wrong"}

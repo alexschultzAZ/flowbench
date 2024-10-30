@@ -9,8 +9,6 @@ app = Flask(__name__)
 
 @app.route('/',methods=["POST"])
 def hello_world():
-    # request_data = request.get_json()
-    logging.info(f"request start time is {request.json['start_time']}")
     # print(request_data.get('start_time'))
     # start_time = request_data.get('start_time')
     # return str(start_time)

@@ -192,6 +192,8 @@ def handle(req):
     download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
     upload_time_gauge = Gauge(f'minio_write_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
     computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
+    total_time_gauge = Gauge(f'time_taken_{funcName}', f'Time took to process this {funcName}', registry=registry)
+
     try:
         logging.info("hello")
         if storage_mode == 'http':
@@ -245,13 +247,17 @@ def handle(req):
                         "Content-Disposition": f"attachment; filename={files[0]}",
                         "Content-Transfer-Encoding": "base64"
                     },
-                    "start_time": start_time
+                    "pipeline_start_time": start_time
                 }
                 logging.info('sending request to modect')
                 result = requests.post(next_url, json = fileBody)
                 logging.info(f"Received result from next_func: {result.text}")
+                end_time = time.time()
+                total_time = end_time - start_time
+                total_time_gauge.set(total_time)
+                push_to_gateway(pushGateway, job=funcName, registry=registry)
                 if result.status_code == 200:
-                    result.text
+                    return {"result": result.text, "total_time": total_time}
                 return {"message": "something went wrong"}
             if storage_mode == 'obj':
                 store_start = time.time()
@@ -270,5 +276,5 @@ def handle(req):
         logging.error(f'Exception : {str(e)}')
         response = {f"Exception: {str(e)}"}
     push_to_gateway(pushGateway, job=funcName, registry=registry)
-    response = {"bucketName" : outputBucket, "fileName" : files[0], "start_time": start_time}
+    response = {"bucketName" : outputBucket, "fileName" : files[0], "pipeline_start_time": start_time}
     return response
