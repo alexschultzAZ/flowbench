@@ -29,7 +29,7 @@ curl -X POST http://knative-vidsplit.default.10.64.140.43.sslip.io -H "Content-T
 curl -X POST http://knative-modect.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage1", "fileName": "test_00-stage-1-2024-10-02-06-49-02-362230.zip"}'
 curl -X POST http://knative-facextract.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage2", "fileName":["test_00-2-1-knative-vidsplit-00001-deployment-7f568b476f-d5r84-2024-10-02-06-49-02-203670-0002.jpg"]}'
 curl -X POST http://knative-facerec.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName":"stage3","fileName":["test_00-stage-2-2024-10-02-06-50-01-489092-knative-facextract-00001-deployment-5597f698c6-fhht6.jpg"]}'
-curl -X POST http://172.17.0.4:8080 -H "Content-Type: application/json" -d '{"bucketName": "stage2", "fileName": ["test_00-2-1-knative-vidsplit-00001-deployment-d7c776d47-ws4dq-2024-09-24-23-22-34-685095-0002.jpg"]}'
+curl -X POST http://172.17.0.7:8080 -H "Content-Type: application/json" -d '{"bucketName": "stage2", "fileName": ["test_00-2-1-knative-vidsplit-00001-deployment-d7c776d47-ws4dq-2024-09-24-23-22-34-685095-0002.jpg"]}'
 
 curl -X POST  http://knative-vidsplit-stateful.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage0", "fileName": "test_00.mp4"}'
 curl -X POST http://vidsplit.default.10.64.140.43.sslip.io -H "Content-Type: application/json" -d '{"bucketName": "stage0", "fileName": "test_00.mp4"}'

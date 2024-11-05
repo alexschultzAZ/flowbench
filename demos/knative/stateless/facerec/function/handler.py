@@ -154,7 +154,7 @@ def handle(req):
         bucket = req['bucketName']
         _files = req["fileName"]
         pipeline_start_time = req["pipeline_start_time"]
-        for file in _files:
+        for index, file in enumerate(_files):
             original_filename = file.split("-")[0]
             if storageMode == 'obj':
                 load_start = time.time()
@@ -200,11 +200,13 @@ def handle(req):
                     store_to_minio(outputBucket, outdir,all)
                     upload_end = time.time()
                     upload_time_gauge.set(upload_end - upload_start)
-                    #os.remove(new_file)
                     if os.path.exists(outdir):
                         shutil.rmtree(outdir)
                 else:
                     store_to_local_storage(mountPath,outputBucket,outdir,all)
+            pipeline_frame_time = Gauge(f'pipeline_time_for_{original_filename}_frame_{index+1}', f'Time took to process the current file frame', registry=registry)
+            pipeline_frame_time.set(time.time() - pipeline_start_time)
+    
     total_time_gauge.set(time.time() - function_start_time)
     pipeline_total_time_gauge.set(time.time() - pipeline_start_time)
     push_to_gateway(pushGateway, job=funcName, registry=registry)
