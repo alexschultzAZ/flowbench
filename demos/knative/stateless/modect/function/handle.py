@@ -3,6 +3,10 @@ from zipfile import ZipFile
 import imutils
 import cv2
 import os, shutil
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
 
 def detect(lgray, frame, min_area):
     frame = imutils.resize(frame, width=320)
@@ -57,15 +61,17 @@ def solve(req):
 
     # if one frame contains motion, hand all coming frames to the next stage, otherwise remove the frame
     pics = sorted(os.listdir(output_dir))
-    for pic in pics:
+    logging.info(f"Pics is {len(pics)}")
+    for index, pic in enumerate(pics):
         path = os.path.join(output_dir, pic)
         frame = cv2.imread(path, cv2.IMREAD_COLOR)
         if frame is None:
-            print("failed to open picture %s" % path)
+            logging.info(f"failed to open picture {path}, index = {index}")
             os.rmdir(output_dir)
             return ''
 
         if last_gray is None:
+            logging.info(f"last_gray block continued pic_index = {index}")
             frame = imutils.resize(frame, width=320)
             last_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             last_gray = cv2.GaussianBlur(last_gray, (21, 21), 0)
@@ -73,11 +79,14 @@ def solve(req):
 
         detected, gray = detect(last_gray, frame, min_area)
         if detected:
+            logging.info(f'inside detected IF block, breaking pic_index ={index}')
             break
         else:
+            logging.info(f'inside detected ELSE block, removing pic_index ={index}')
             last_gray = gray
             os.remove(path)
-
+            
+    logging.info(f'final out_dir in handle is {len(os.listdir(output_dir))}')
     if len(os.listdir(output_dir)) == 0:
         os.rmdir(output_dir)
         return ''

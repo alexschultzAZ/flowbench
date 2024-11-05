@@ -207,6 +207,6 @@ def handle(req):
     total_time_gauge.set(time.time() - function_start_time)
     
     push_to_gateway(pushGateway, job=funcName, registry=registry)
-    
+    logging.info(f'modect files len = {len(files)}')
     response = {"bucketName" : outputBucket, "fileName" : files, "pipeline_start_time": pipeline_start_time}
     return response

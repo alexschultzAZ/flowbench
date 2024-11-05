@@ -128,6 +128,7 @@ def handle(req):
         bucket = req["bucketName"]
         _files = req["fileName"]
         pipeline_start_time = req["pipeline_start_time"]
+        logging.info(f'files received {len(_files)}')
         for file in _files:
             original_filename = file.split("-")[0]
             if storageMode == 'obj':
