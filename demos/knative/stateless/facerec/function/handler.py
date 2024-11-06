@@ -206,6 +206,8 @@ def handle(req):
                     store_to_local_storage(mountPath,outputBucket,outdir,all)
             pipeline_frame_time = Gauge(f'pipeline_time_for_{original_filename}_frame_{index+1}', f'Time took to process the current file frame', registry=registry)
             pipeline_frame_time.set(time.time() - pipeline_start_time)
+            push_to_gateway(pushGateway, job=funcName, registry=registry)
+
     
     total_time_gauge.set(time.time() - function_start_time)
     pipeline_total_time_gauge.set(time.time() - pipeline_start_time)
