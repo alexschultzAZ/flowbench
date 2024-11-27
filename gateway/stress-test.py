@@ -2,17 +2,18 @@ import asyncio
 import json
 import os
 import subprocess
+import time
 import aiohttp
 import csv
 from datetime import datetime
 
-async def make_request(i, service_url, session):
+async def make_request(current_invocation, service_url, session):
     
     
     json_data = {"bucketName": "stage0", "fileName": "test_00.mp4"}
     async with session.post(url=service_url, json=json_data) as response:
         # elapsed_time = response.elapsed.total_seconds() if response.elapsed else 0
-        # print(f"Invocation {i + 1} at {datetime.now().time()}: Status code {response.status}")
+        # print(f"Invocation {current_invocation + 1} at {datetime.now().time()}: Status code {response.status}")
         if response.status == 200:
             try:
                 return await response.text()
@@ -50,20 +51,27 @@ def get_knative_service_url(service_name):
         return None
 
 async def invoke_flask_app(invocations):
-    function_name = "kn-vidsplit-stateless"
+    function_name = "vidsplit"
     service_url = get_knative_service_url(function_name)
     # print(f"Service URL is {service_url}")
     if service_url is None:
         print(f"URL for service {function_name} not found.... skipping!!")
         return
+    # for i in range(100000):
+    #     print(time.time() - start_time)
     async with aiohttp.ClientSession() as session:
         tasks = []
-        for i in range(invocations):
-            tasks.append(asyncio.ensure_future(make_request(i, service_url, session)))
+        invocation = 1
+        start_time = time.time()
+        while invocation < invocations:
+            tasks.append(asyncio.ensure_future(make_request(invocation, service_url, session)))
+            invocation += 1
+        print(f'Total invocations done are {invocation}')
         responses = await asyncio.gather(*tasks)
-        # for resp in responses:
-        #     print(resp)
+        end_time = time.time()
+        print(f'Total time took is {end_time - start_time}')
+        # print(responses)
 
 if __name__ == "__main__":
-    invocation_count = 120 # Specify the number of invocations
-    asyncio.run(invoke_flask_app(invocation_count))
+    # invocation_count = 
+    asyncio.run(invoke_flask_app(20))
