@@ -228,5 +228,5 @@ if __name__ == "__main__":
 
     # Create the WorkflowProcessor instance with the provided file name
     processor = WorkflowProcessor(args.template_file)
-    # processor.build_and_deploy_functions()
+    processor.build_and_deploy_functions()
     processor.process_workflow()
