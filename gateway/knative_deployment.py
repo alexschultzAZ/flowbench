@@ -1,8 +1,8 @@
 import subprocess
 import yaml
-import os
+import logging
 
-combined_yaml_file = 'va-knative-service.yml'
+logging.basicConfig(level=logging.INFO)
 
 def parse_yaml(input_yaml):
     """Parse the input YAML file and extract function details."""
@@ -24,7 +24,7 @@ def parse_yaml(input_yaml):
 def create_knative_services_yaml(functions):
     """Create a combined Knative service YAML for all functions."""
     knative_services = []
-    
+    logging.debug("Creating Knative Services started")
     for func in functions:
         func_name = func['name']
         image_name = func['image']
@@ -58,24 +58,27 @@ def create_knative_services_yaml(functions):
         knative_services.append(knative_service)
 
     # Write all Knative services to a single YAML file
-    # combined_yaml_file = 'va-knative-service.yml'
-    with open(combined_yaml_file, 'w') as file:
+    result_file = "knative-config.yaml"
+    with open(result_file, 'w') as file:
         yaml.dump_all(knative_services, file)
+    logging.debug("Creating Knative Services ended")
     
-    return combined_yaml_file
+    return result_file
 
 def apply_knative_yaml(yaml_file):
+    logging.debug("Started Deploying functions onto knative")
+
     """Apply the Knative YAML using kubectl."""
     delete_service_command = f"microk8s kubectl delete -f {yaml_file}"
     apply_command = f"microk8s kubectl apply -f {yaml_file}"
-    print(f"Deleting Service from {yaml_file}...")
+    logging.info(f"Deleting Service from {yaml_file}...")
     subprocess.run(delete_service_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    print(f"Applying {yaml_file}...")
+    logging.info(f"Applying {yaml_file}...")
     subprocess.run(apply_command, shell=True, check=True)
+    logging.info("Applying done!")
 
-def process_functions(input_yaml):
-    """Process the functions from the input YAML and handle the Knative deployment."""
-    functions = parse_yaml(input_yaml)
+def build_and_deploy(functions):
+   
     knative_yaml_file = create_knative_services_yaml(functions)
 
     # Apply the Knative service YAML
@@ -83,7 +86,3 @@ def process_functions(input_yaml):
 
        
 
-# Specify the input YAML file (the one you provided)
-# input_yaml = 'flowbench_cncf_latest.yml'
-input_yaml = 'workflow.yml'
-process_functions(input_yaml)
