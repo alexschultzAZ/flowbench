@@ -183,27 +183,27 @@ def handle(req):
 
     if outdir != None and outdir != '':
         files = os.listdir(outdir)
-        if mn_fs:
-            image_path = os.path.join(outdir,files[0])
-            with open(image_path, "rb") as image_file:
-                image_data = image_file.read()
-            image_base64 = base64.b64encode(image_data).decode('utf-8')
-            request_body = {
-                "body": image_base64,
-                "headers": {
-                    "Content-Type": "image/jpeg",
-                    "Content-Disposition": f"attachment; filename={files[0]}",
-                    "Content-Transfer-Encoding": "base64"
-                },
-                "pipeline_start_time": req['pipeline_start_time']
-            } 
-            response = requests.post(next_url, json=request_body)
-            total_time = time.time() - start_time
-            total_time_gauge.set(total_time)
-            push_to_gateway(pushGateway, job=funcName, registry=registry)
-            if response and response.status_code == 200:
-                return response.text
-            return {"message": "something went wrong"}
+        # if mn_fs:
+        #     image_path = os.path.join(outdir,files[0])
+        #     with open(image_path, "rb") as image_file:
+        #         image_data = image_file.read()
+        #     image_base64 = base64.b64encode(image_data).decode('utf-8')
+        #     request_body = {
+        #         "body": image_base64,
+        #         "headers": {
+        #             "Content-Type": "image/jpeg",
+        #             "Content-Disposition": f"attachment; filename={files[0]}",
+        #             "Content-Transfer-Encoding": "base64"
+        #         },
+        #         "pipeline_start_time": req['pipeline_start_time']
+        #     } 
+        #     response = requests.post(next_url, json=request_body)
+        #     total_time = time.time() - start_time
+        #     total_time_gauge.set(total_time)
+        #     push_to_gateway(pushGateway, job=funcName, registry=registry)
+        #     if response and response.status_code == 200:
+        #         return response.text
+        #     return {"message": "something went wrong"}
             
 
         if storageMode == 'obj':

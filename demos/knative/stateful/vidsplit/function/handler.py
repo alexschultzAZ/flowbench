@@ -192,7 +192,7 @@ def handle(req):
     download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
     upload_time_gauge = Gauge(f'minio_write_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
     computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
-    total_time_gauge = Gauge(f'time_taken_{funcName}', f'Time took to process this {funcName}', registry=registry)
+    # total_time_gauge = Gauge(f'time_taken_{funcName}', f'Time took to process this {funcName}', registry=registry)
 
     try:
         logging.info("hello")
@@ -234,31 +234,31 @@ def handle(req):
 
         if outdir:
             files = os.listdir(outdir)
-            if mn_fs:
-                zip_file_path = os.path.join(outdir, files[0])
-                with open(zip_file_path, 'rb') as zip_file:
-                    zip_content = zip_file.read()
+            # if mn_fs:
+            #     zip_file_path = os.path.join(outdir, files[0])
+            #     with open(zip_file_path, 'rb') as zip_file:
+            #         zip_content = zip_file.read()
                 
-                zip_base64 = base64.b64encode(zip_content).decode('utf-8')
-                fileBody = {
-                    "body": zip_base64,
-                    "headers": {
-                        "Content-Type": "application/zip",
-                        "Content-Disposition": f"attachment; filename={files[0]}",
-                        "Content-Transfer-Encoding": "base64"
-                    },
-                    "pipeline_start_time": start_time
-                }
-                logging.info('sending request to modect')
-                result = requests.post(next_url, json = fileBody)
-                logging.info(f"Received result from next_func: {result.text}")
-                end_time = time.time()
-                total_time = end_time - start_time
-                total_time_gauge.set(total_time)
-                push_to_gateway(pushGateway, job=funcName, registry=registry)
-                if result.status_code == 200:
-                    return {"result": result.text, "total_time": total_time}
-                return {"message": "something went wrong"}
+            #     zip_base64 = base64.b64encode(zip_content).decode('utf-8')
+            #     fileBody = {
+            #         "body": zip_base64,
+            #         "headers": {
+            #             "Content-Type": "application/zip",
+            #             "Content-Disposition": f"attachment; filename={files[0]}",
+            #             "Content-Transfer-Encoding": "base64"
+            #         },
+            #         "pipeline_start_time": start_time
+            #     }
+            #     logging.info('sending request to modect')
+            #     result = requests.post(next_url, json = fileBody)
+            #     logging.info(f"Received result from next_func: {result.text}")
+            #     end_time = time.time()
+            #     total_time = end_time - start_time
+            #     total_time_gauge.set(total_time)
+            #     push_to_gateway(pushGateway, job=funcName, registry=registry)
+            #     if result.status_code == 200:
+            #         return {"result": result.text, "total_time": total_time}
+            #     return {"message": "something went wrong"}
             if storage_mode == 'obj':
                 store_start = time.time()
                 store_to_minio(outputBucket, outdir)
