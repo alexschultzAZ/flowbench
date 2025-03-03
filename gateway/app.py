@@ -21,7 +21,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 500 * 1000 * 100  # 50 MB
 app.config['CORS_HEADER'] = 'application/json'
 
-minio_client = Minio("127.0.0.1:9000",    
+minio_client = Minio("127.0.0.3:9000",    
         access_key="minioadmin",
         secret_key="minioadmin",
 	    secure=False
@@ -39,6 +39,11 @@ def init():
     return jsonify({"status": "success"})
 
 
+"""
+curl -X POST -F "files=@workflow.yml" http://127.0.0.1:5000/uploadtemplate
+
+"""
+
 @app.route('/uploadtemplate', methods=['POST'])
 def uploadTemplate():
     file = request.files.getlist('files')[0]
@@ -48,9 +53,17 @@ def uploadTemplate():
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         processor = templateparser.WorkflowProcessor(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         processor.build_and_deploy_functions()
-        processor.process_workflow()
+        # processor.process_workflow()
     else:
         return jsonify({'message': 'File type not allowed'}), 400
+    return jsonify({"name": filename, "status": "success"})
+
+@app.route('/processworkflow', methods=['POST'])
+def processWorkflow():
+    file = request.files.getlist('files')[0]
+    filename = file.filename
+    processor = templateparser.WorkflowProcessor(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    processor.process_workflow()
     return jsonify({"name": filename, "status": "success"})
 
 # Create a bucket for storing the count if it doesn't exist

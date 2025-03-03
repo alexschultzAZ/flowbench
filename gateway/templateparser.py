@@ -1,9 +1,13 @@
 import os
 import subprocess
 import yaml
+import datetime
 import json
+import time
 import requests
 import argparse
+from influxdb_client import InfluxDBClient, Point, WritePrecision
+from influxdb_client.client.write_api import SYNCHRONOUS
 from knative_deployment import build_and_deploy
 
 class WorkflowProcessor:
@@ -15,6 +19,17 @@ class WorkflowProcessor:
         self.workflow_logic = ""
         self.load_template(file_path=file_path)
         self.build_execution_order()
+        # InfluxDB configuration
+        url = "http://localhost:8086"         # Update if your InfluxDB endpoint is different
+        token = "DMlMCbn3k8jGh_YVWR0EA2G-QkIgikM3xjlLR4svb7eNkiSd1NSFlrMxZJh4rA6hHRpYOpckmLS2bTQFZY4bSA=="           # Replace with your InfluxDB API token
+        self.org = "testorg"                        # Replace with your organization name
+        self.bucket = "testbucket"                  # Replace with the bucket name you want to write data to
+
+        # Create a client instance
+        self.client = InfluxDBClient(url=url, token=token, org=self.org)
+
+        # Get the write API
+        self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
 
     def load_template(self, file_path):
         # UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), 'Downloads'))
@@ -44,7 +59,9 @@ class WorkflowProcessor:
     
     def handle_pipeline(self):
         # prevResponse = {"bucketName" : "stage0", "fileName" : "test_00.mp4"}
-       
+
+        start_time = time.time()
+        
         for __, func_list in self.execution_order.items():
             func = func_list[0]
             input_data = func['data']
@@ -59,6 +76,17 @@ class WorkflowProcessor:
             input_data = response.text
             print("Called " + func['name'])
             break
+
+        pipeline_end_to_end_time = time.time() - start_time
+        point = (
+            Point("end_to_end_time")               # measurement name
+            # .tag("frame", str(frame))          # optional tag
+            .tag("invoc", str(1))
+            .field("end_to_end_time", pipeline_end_to_end_time)         # field value
+            .time(datetime.datetime.utcnow(), WritePrecision.NS)  # current UTC timestamp
+        )
+        self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+        print(pipeline_end_to_end_time)
     
     def handle_cron(self):
         for _, func_list in self.execution_order.items():
@@ -230,3 +258,4 @@ if __name__ == "__main__":
     processor = WorkflowProcessor(args.template_file)
     processor.build_and_deploy_functions()
     processor.process_workflow()
+    self.client.close()
