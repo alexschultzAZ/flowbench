@@ -81,6 +81,37 @@ class WorkflowProcessor:
         point = (
             Point("end_to_end_time")               # measurement name
             # .tag("frame", str(frame))          # optional tag
+            .tag("invoc", str(0))
+            .field("end_to_end_time", pipeline_end_to_end_time)         # field value
+            .time(datetime.datetime.utcnow(), WritePrecision.NS)  # current UTC timestamp
+        )
+        self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+        print(pipeline_end_to_end_time)
+
+    def stress_pipeline(self, invoc_count):
+        # prevResponse = {"bucketName" : "stage0", "fileName" : "test_00.mp4"}
+
+        start_time = time.time()
+        
+        for __, func_list in self.execution_order.items():
+            func = func_list[0]
+            input_data = func['data']
+            if(len(func_list) > 1):
+                print("Pipeline workflow cannot have two or more functions at the same level")
+                return
+            
+            service_url = get_knative_service_url(func['name']) 
+            # Call the knative function/service
+            response = requests.post(service_url, json=input_data)
+            print("Response =",response.text)
+            input_data = response.text
+            print("Called " + func['name'])
+            break
+
+        pipeline_end_to_end_time = time.time() - start_time
+        point = (
+            Point("end_to_end_time")               # measurement name
+            # .tag("frame", str(frame))          # optional tag
             .tag("invoc", str(1))
             .field("end_to_end_time", pipeline_end_to_end_time)         # field value
             .time(datetime.datetime.utcnow(), WritePrecision.NS)  # current UTC timestamp
@@ -201,6 +232,25 @@ class WorkflowProcessor:
         if self.workflow_logic == "pipeline":
             print("pipeline")
             self.handle_pipeline()
+        elif self.workflow_logic == "cron":
+            print("cron")
+            self.handle_cron()
+        elif self.workflow_logic == "one_to_many":
+            print("one-to-many")
+            self.handle_one_to_many()
+        elif self.workflow_logic == "many_to_one":
+            print("many-to-one")
+            self.handle_many_to_one()
+        elif self.workflow_logic == "branching":
+            print("branching")
+            self.handle_branching()
+        else:
+            print("error")
+
+    def stress_workflow(self):
+        if self.workflow_logic == "pipeline":
+            print("pipeline")
+            self.stress_pipeline()
         elif self.workflow_logic == "cron":
             print("cron")
             self.handle_cron()

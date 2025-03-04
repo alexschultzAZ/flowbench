@@ -43,7 +43,6 @@ def init():
 curl -X POST -F "files=@workflow.yml" http://127.0.0.1:5000/uploadtemplate
 
 """
-
 @app.route('/uploadtemplate', methods=['POST'])
 def uploadTemplate():
     file = request.files.getlist('files')[0]
@@ -58,6 +57,11 @@ def uploadTemplate():
         return jsonify({'message': 'File type not allowed'}), 400
     return jsonify({"name": filename, "status": "success"})
 
+
+"""
+curl -X POST -F "files=@workflow.yml" http://127.0.0.1:5000/processworkflow
+
+"""
 @app.route('/processworkflow', methods=['POST'])
 def processWorkflow():
     file = request.files.getlist('files')[0]
@@ -65,6 +69,22 @@ def processWorkflow():
     processor = templateparser.WorkflowProcessor(os.path.join(app.config['UPLOAD_FOLDER'], filename))
     processor.process_workflow()
     return jsonify({"name": filename, "status": "success"})
+
+
+"""
+curl -X POST -F "files=@workflow.yml" http://127.0.0.1:5000/stressworkflow \
+-H "Content-Type: application/json" \
+-d '{"invoc_count": 2}'
+
+"""
+@app.route('/stressworkflow', methods=['POST'])
+def processWorkflow():
+    file = request.files.getlist('files')[0]
+    filename = file.filename
+    processor = templateparser.WorkflowProcessor(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    processor.stress_workflow(request.args.get('invoc_count'))
+    return jsonify({"name": filename, "status": "success"})
+
 
 # Create a bucket for storing the count if it doesn't exist
 bucket_name = "async-counts"
