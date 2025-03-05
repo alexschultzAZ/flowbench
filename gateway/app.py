@@ -40,7 +40,7 @@ def init():
 
 
 """
-curl -X POST -F "files=@workflow.yml" http://127.0.0.1:5000/uploadtemplate
+curl -X POST -F "files=@test_workflow.yaml" http://127.0.0.1:5000/uploadtemplate
 
 """
 @app.route('/uploadtemplate', methods=['POST'])
@@ -59,7 +59,7 @@ def uploadTemplate():
 
 
 """
-curl -X POST -F "files=@workflow.yml" http://127.0.0.1:5000/processworkflow
+curl -X POST -F "files=@test_workflow.yaml" http://127.0.0.1:5000/processworkflow
 
 """
 @app.route('/processworkflow', methods=['POST'])
@@ -72,17 +72,14 @@ def processWorkflow():
 
 
 """
-curl -X POST -F "files=@workflow.yml" http://127.0.0.1:5000/stressworkflow \
--H "Content-Type: application/json" \
--d '{"invoc_count": 2}'
-
+curl -X POST -F "files=@test_workflow.yaml" http://127.0.0.1:5000/stressworkflow?invoc=2
 """
 @app.route('/stressworkflow', methods=['POST'])
-def processWorkflow():
+def stressWorkflow():
     file = request.files.getlist('files')[0]
     filename = file.filename
     processor = templateparser.WorkflowProcessor(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-    processor.stress_workflow(request.args.get('invoc_count'))
+    processor.stress_workflow(request.args.get('invoc'))
     return jsonify({"name": filename, "status": "success"})
 
 

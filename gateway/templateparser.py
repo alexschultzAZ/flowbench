@@ -2,6 +2,7 @@ import os
 import subprocess
 import yaml
 import datetime
+import multiprocessing
 import json
 import time
 import requests
@@ -88,9 +89,9 @@ class WorkflowProcessor:
         self.write_api.write(bucket=self.bucket, org=self.org, record=point)
         print(pipeline_end_to_end_time)
 
-    def stress_pipeline(self, invoc_count):
-        # prevResponse = {"bucketName" : "stage0", "fileName" : "test_00.mp4"}
 
+    def stress(self, invoc):
+        print("lol stress " + str(invoc))
         start_time = time.time()
         
         for __, func_list in self.execution_order.items():
@@ -112,12 +113,30 @@ class WorkflowProcessor:
         point = (
             Point("end_to_end_time")               # measurement name
             # .tag("frame", str(frame))          # optional tag
-            .tag("invoc", str(1))
+            .tag("invoc", str(invoc))
             .field("end_to_end_time", pipeline_end_to_end_time)         # field value
             .time(datetime.datetime.utcnow(), WritePrecision.NS)  # current UTC timestamp
         )
         self.write_api.write(bucket=self.bucket, org=self.org, record=point)
         print(pipeline_end_to_end_time)
+
+    def stress_pipeline(self, invoc_count):
+        invoc_count = int(invoc_count)
+        # multiprocessing pool object
+        pool = multiprocessing.Pool()
+
+        # pool object with number of element
+        pool = multiprocessing.Pool(processes=invoc_count)
+
+        # input list
+        inputs = range(1, invoc_count+1)
+
+        # map the function to the list and pass
+        # function and input list as arguments
+        outputs = pool.map(self.stress, inputs)
+        # prevResponse = {"bucketName" : "stage0", "fileName" : "test_00.mp4"}
+        print("here lol")
+
     
     def handle_cron(self):
         for _, func_list in self.execution_order.items():
@@ -247,10 +266,10 @@ class WorkflowProcessor:
         else:
             print("error")
 
-    def stress_workflow(self):
+    def stress_workflow(self, invoc_count):
         if self.workflow_logic == "pipeline":
             print("pipeline")
-            self.stress_pipeline()
+            self.stress_pipeline(invoc_count)
         elif self.workflow_logic == "cron":
             print("cron")
             self.handle_cron()
