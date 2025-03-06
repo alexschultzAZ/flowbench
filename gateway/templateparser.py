@@ -27,7 +27,7 @@ class WorkflowProcessor:
         self.bucket = "testbucket"                  # Replace with the bucket name you want to write data to
 
         # Create a client instance
-        self.client = InfluxDBClient(url=url, token=token, org=self.org)
+        self.client = InfluxDBClient(url=url, token=token, org=self.org, timeout=30000)
 
         # Get the write API
         self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
@@ -90,8 +90,12 @@ class WorkflowProcessor:
         print(pipeline_end_to_end_time)
 
 
-    def stress(self, invoc):
+###### STORE DATA THETN SAVE AT END OF STRESS TEST
+    def stress(self, invoc):    
         print("lol stress " + str(invoc))
+        sleeptime = (invoc - 1) * 4
+        print("sleeping " + str(sleeptime))
+        time.sleep(sleeptime)
         start_time = time.time()
         
         for __, func_list in self.execution_order.items():
@@ -113,12 +117,13 @@ class WorkflowProcessor:
         point = (
             Point("end_to_end_time")               # measurement name
             # .tag("frame", str(frame))          # optional tag
-            .tag("invoc", str(invoc))
+            .tag("invoc", str(0))
             .field("end_to_end_time", pipeline_end_to_end_time)         # field value
-            .time(datetime.datetime.utcnow(), WritePrecision.NS)  # current UTC timestamp
+            .time(datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'))  # current UTC timestamp
         )
-        self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+        # self.write_api.write(bucket=self.bucket, org=self.org, record=point)
         print(pipeline_end_to_end_time)
+        return point
 
     def stress_pipeline(self, invoc_count):
         invoc_count = int(invoc_count)
@@ -134,6 +139,7 @@ class WorkflowProcessor:
         # map the function to the list and pass
         # function and input list as arguments
         outputs = pool.map(self.stress, inputs)
+        self.write_api.write(bucket=self.bucket, org=self.org, record=outputs, write_precision="ms")
         # prevResponse = {"bucketName" : "stage0", "fileName" : "test_00.mp4"}
         print("here lol")
 
