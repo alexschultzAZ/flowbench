@@ -151,7 +151,7 @@ def handle(req):
         storageMode = os.getenv("STORAGE_TYPE")
         bucket = req['bucketName']
         _files = req["fileName"]
-        pipeline_start_time = req["pipeline_start_time"]
+        # pipeline_start_time = req["pipeline_start_time"]
         for file in _files:
             original_filename = file.split("-")[0]
             if storageMode == 'obj':
@@ -185,9 +185,9 @@ def handle(req):
             with open(new_file,"w") as dest_file:
                 dest_file.write(file_content)
             
-            total_time_gauge.set(time.time() - start_time)
-            pipeline_total_time_gauge.set(time.time() - req['pipeline_start_time'])
-            push_to_gateway(pushGateway, job=funcName, registry=registry)
+            # total_time_gauge.set(time.time() - start_time)
+            # pipeline_total_time_gauge.set(time.time() - req['pipeline_start_time'])
+            # push_to_gateway(pushGateway, job=funcName, registry=registry)
             return {
                 "body": f"Written to file {files[0]}",
                 "headers": {
@@ -207,6 +207,5 @@ def handle(req):
         else:
             store_to_local_storage(mountPath,outputBucket,outdir,all)
     
-    push_to_gateway(pushGateway, job=funcName, registry=registry)
-    response = {"bucketName" : outputBucket, "fileName" : all, "first_stage_start_time": start_time, "total_time": time.time()-(start_time if start_time else time.time())}
+    response = {"bucketName" : outputBucket, "fileName" : all}
     return response 

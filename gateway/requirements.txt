@@ -1,2 +1,6 @@
+flask
+subprocess-tee
+pyyaml
 requests
-aiohttp
+influxdb-client
+argparse

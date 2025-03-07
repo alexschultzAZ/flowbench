@@ -20,11 +20,12 @@ class WorkflowProcessor:
         self.workflow_logic = ""
         self.load_template(file_path=file_path)
         self.build_execution_order()
+        # self.build_and_deploy_functions()
         # InfluxDB configuration
         url = "http://localhost:8086"         # Update if your InfluxDB endpoint is different
-        token = "DMlMCbn3k8jGh_YVWR0EA2G-QkIgikM3xjlLR4svb7eNkiSd1NSFlrMxZJh4rA6hHRpYOpckmLS2bTQFZY4bSA=="           # Replace with your InfluxDB API token
-        self.org = "testorg"                        # Replace with your organization name
-        self.bucket = "testbucket"                  # Replace with the bucket name you want to write data to
+        token = "cYdU0evPogU3_-2gmUBA72U3saY_666UsSh6-zXM8nr_8WHPbNXmCp-cNCPP2JqmCN3ON8Vy-Vgv8koDfYQbGQ=="           # Replace with your InfluxDB API token
+        self.org = "test"                        # Replace with your organization name
+        self.bucket = "test"                  # Replace with the bucket name you want to write data to
 
         # Create a client instance
         self.client = InfluxDBClient(url=url, token=token, org=self.org, timeout=30000)
@@ -97,21 +98,25 @@ class WorkflowProcessor:
         print("sleeping " + str(sleeptime))
         time.sleep(sleeptime)
         start_time = time.time()
-        
+        input_data=None
+        print(f"funcs len is {len(self.execution_order.items())}")
         for __, func_list in self.execution_order.items():
             func = func_list[0]
-            input_data = func['data']
+            if input_data is None:
+                input_data = func['data']
+            print(f"func = {func}, input_data = {input_data}")
             if(len(func_list) > 1):
                 print("Pipeline workflow cannot have two or more functions at the same level")
                 return
             
             service_url = get_knative_service_url(func['name']) 
             # Call the knative function/service
+            print("Calling " + func['name'])
             response = requests.post(service_url, json=input_data)
             print("Response =",response.text)
-            input_data = response.text
+            input_data = response.json()
             print("Called " + func['name'])
-            break
+            
 
         pipeline_end_to_end_time = time.time() - start_time
         point = (
@@ -293,6 +298,7 @@ class WorkflowProcessor:
     
     def build_and_deploy_functions(self):
         # Pass functions dict to the Knative Helper's build/deployment function
+        print("building...")
         build_and_deploy(self.functions)
 
 def get_knative_service_url(service_name):
@@ -316,6 +322,7 @@ def get_knative_service_url(service_name):
 
             # The second line contains the name and URL
             name, url = output[1].split()
+            print(url)
             return url
         except Exception as e:
             print(f"An error occurred: {e}")

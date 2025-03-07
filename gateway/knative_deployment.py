@@ -66,19 +66,19 @@ def create_knative_services_yaml(functions):
     return result_file
 
 def apply_knative_yaml(yaml_file):
-    logging.debug("Started Deploying functions onto knative")
+    print("Started Deploying functions onto knative")
 
     """Apply the Knative YAML using kubectl."""
     delete_service_command = f"microk8s kubectl delete -f {yaml_file}"
     apply_command = f"microk8s kubectl apply -f {yaml_file}"
-    logging.info(f"Deleting Service from {yaml_file}...")
+    print(f"Deleting Service from {yaml_file}...")
     subprocess.run(delete_service_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    logging.info(f"Applying {yaml_file}...")
+    print(f"Applying {yaml_file}...")
     subprocess.run(apply_command, shell=True, check=True)
     logging.info("Applying done!")
 
 def build_and_deploy(functions):
-   
+    print("inside build and deploy")
     knative_yaml_file = create_knative_services_yaml(functions)
 
     # Apply the Knative service YAML

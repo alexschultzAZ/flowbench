@@ -131,7 +131,7 @@ def handle(req):
     else:
         bucket = req["bucketName"]
         _files = req["fileName"]
-        pipeline_start_time = req["pipeline_start_time"]
+        # pipeline_start_time = req["pipeline_start_time"]
         for file in _files:
             original_filename = file.split("-")[0]
             if storageMode == 'obj':
