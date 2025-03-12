@@ -133,8 +133,11 @@ def handle(req):
         _files = req["fileName"]
         # pipeline_start_time = req["pipeline_start_time"]
         for file in _files:
+            logging.info("file is: " + str(file))
             original_filename = file.split("-")[0]
+            logging.info("original file is: " + str(original_filename))
             if storageMode == 'obj':
+                logging.info("loading from minio")
                 load_start = time.time()
                 new_file = load_from_minio(bucket, file)
                 load_end = time.time()
@@ -148,51 +151,53 @@ def handle(req):
                     print('No input file to read')
                     print(response_msg)
                     exit(1)
+            print("now i'm computing for file: " + str(file))
+            compute_start = time.time()
+            face_fun = Face()
+            outdir = face_fun.handler_small(new_file, original_filename)
+            compute_end = time.time()
+            computation_time_gauge.set(compute_end - compute_start)
+            logging.info("I'm done computing for file: " + str(file))
 
-    compute_start = time.time()
-    face_fun = Face()
-    outdir = face_fun.handler_small(new_file, original_filename)
-    compute_end = time.time()
-    computation_time_gauge.set(compute_end - compute_start)
-    logging.info(f'outdir is {outdir}')
-    if outdir != None and outdir != '':
-        logging.info('inside outdir block')
-        # files = os.listdir(outdir)
-        # if mn_fs:
-        #     logging.info(f"len is {len(files)}, pipeline_start_time = {req['pipeline_start_time']}")
-        #     image_path = os.path.join(outdir,files[0])
-        #     with open(image_path, "rb") as image_file:
-        #         image_data = image_file.read()
-        #     image_base64 = base64.b64encode(image_data).decode('utf-8')
-        #     fileBody = {
-        #         "body": image_base64,
-        #         "headers": {
-        #             "Content-Type": "image/jpeg",
-        #             "Content-Disposition": f"attachment; filename={files[0]}",
-        #             "Content-Transfer-Encoding": "base64"
-        #         },
-        #         "pipeline_start_time": req['pipeline_start_time']
-        #     } 
-        #     response = requests.post(next_url, json = fileBody)
-        #     total_time = time.time() - start_time
-        #     total_time_gauge.set(total_time)
-        #     push_to_gateway(pushGateway, job=funcName, registry=registry)
-        #     if response and response.status_code == 200:
+            logging.info(f'outdir is {outdir}')
+            if outdir != None and outdir != '':
+                logging.info('inside outdir block')
+                # files = os.listdir(outdir)
+                # if mn_fs:
+                #     logging.info(f"len is {len(files)}, pipeline_start_time = {req['pipeline_start_time']}")
+                #     image_path = os.path.join(outdir,files[0])
+                #     with open(image_path, "rb") as image_file:
+                #         image_data = image_file.read()
+                #     image_base64 = base64.b64encode(image_data).decode('utf-8')
+                #     fileBody = {
+                #         "body": image_base64,
+                #         "headers": {
+                #             "Content-Type": "image/jpeg",
+                #             "Content-Disposition": f"attachment; filename={files[0]}",
+                #             "Content-Transfer-Encoding": "base64"
+                #         },
+                #         "pipeline_start_time": req['pipeline_start_time']
+                #     } 
+                #     response = requests.post(next_url, json = fileBody)
+                #     total_time = time.time() - start_time
+                #     total_time_gauge.set(total_time)
+                #     push_to_gateway(pushGateway, job=funcName, registry=registry)
+                #     if response and response.status_code == 200:
 
-        #         return response.text
-            
-        #     return {"message": "something went wrong"}
-            
-        if storageMode == 'obj':
-            upload_start = time.time()
-            store_to_minio(outputBucket, outdir,all)
-            upload_end = time.time()
-            upload_time_gauge.set(upload_end - upload_start)
-            # os.remove(new_file)
-            if os.path.exists(outdir):
-                shutil.rmtree(outdir)
-        else:
-            store_to_local_storage(mountPath,outputBucket,outdir,all)
+                #         return response.text
+                    
+                #     return {"message": "something went wrong"}
+                    
+                if storageMode == 'obj':
+                    upload_start = time.time()
+                    store_to_minio(outputBucket, outdir,all)
+                    upload_end = time.time()
+                    upload_time_gauge.set(upload_end - upload_start)
+                    # os.remove(new_file)
+                    if os.path.exists(outdir):
+                        shutil.rmtree(outdir)
+                else:
+                    store_to_local_storage(mountPath,outputBucket,outdir,all)
         
         
     push_to_gateway(pushGateway, job=funcName, registry=registry)

@@ -168,44 +168,44 @@ def handle(req):
                     print('No input file to read')
                     print(response)
                     exit(1)
-    compute_start = time.time()
-    face_fun = Face()
-    outdir, name = face_fun.handler_small(new_file, original_filename)
-    compute_end = time.time()
-    computation_time_gauge.set(compute_end - compute_start)
+            compute_start = time.time()
+            face_fun = Face()
+            outdir, name = face_fun.handler_small(new_file, original_filename)
+            compute_end = time.time()
+            computation_time_gauge.set(compute_end - compute_start)
 
-    if outdir != None and outdir != '':
-        files = os.listdir(outdir)
-        if mn_fs:
-            file_path = os.path.join(outdir,files[0])
-            new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
-            file_content = ''
-            with open(file_path, "r") as text_file:
-                file_content = text_file.read()
-            with open(new_file,"w") as dest_file:
-                dest_file.write(file_content)
-            
-            # total_time_gauge.set(time.time() - start_time)
-            # pipeline_total_time_gauge.set(time.time() - req['pipeline_start_time'])
-            # push_to_gateway(pushGateway, job=funcName, registry=registry)
-            return {
-                "body": f"Written to file {files[0]}",
-                "headers": {
-                    "Content-Type": "image/text",
-                    "Content-Disposition": f"attachment; filename={files[0]}",
-                    "Content-Transfer-Encoding": "base64"
-                }
-            } 
-        if storageMode == 'obj':
-            upload_start = time.time()
-            store_to_minio(outputBucket, outdir,all)
-            upload_end = time.time()
-            upload_time_gauge.set(upload_end - upload_start)
-            #os.remove(new_file)
-            if os.path.exists(outdir):
-                shutil.rmtree(outdir)
-        else:
-            store_to_local_storage(mountPath,outputBucket,outdir,all)
+            if outdir != None and outdir != '':
+                files = os.listdir(outdir)
+                if mn_fs:
+                    file_path = os.path.join(outdir,files[0])
+                    new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
+                    file_content = ''
+                    with open(file_path, "r") as text_file:
+                        file_content = text_file.read()
+                    with open(new_file,"w") as dest_file:
+                        dest_file.write(file_content)
+                    
+                    # total_time_gauge.set(time.time() - start_time)
+                    # pipeline_total_time_gauge.set(time.time() - req['pipeline_start_time'])
+                    # push_to_gateway(pushGateway, job=funcName, registry=registry)
+                    return {
+                        "body": f"Written to file {files[0]}",
+                        "headers": {
+                            "Content-Type": "image/text",
+                            "Content-Disposition": f"attachment; filename={files[0]}",
+                            "Content-Transfer-Encoding": "base64"
+                        }
+                    } 
+                if storageMode == 'obj':
+                    upload_start = time.time()
+                    store_to_minio(outputBucket, outdir,all)
+                    upload_end = time.time()
+                    upload_time_gauge.set(upload_end - upload_start)
+                    #os.remove(new_file)
+                    if os.path.exists(outdir):
+                        shutil.rmtree(outdir)
+                else:
+                    store_to_local_storage(mountPath,outputBucket,outdir,all)
     
     response = {"bucketName" : outputBucket, "fileName" : all}
     return response 
