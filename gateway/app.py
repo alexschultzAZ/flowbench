@@ -63,7 +63,7 @@ def processWorkflow():
 
 
 """
-curl -X POST -F "files=@test_workflow.yaml" http://127.0.0.1:5001/stressworkflow?invoc=2
+curl -X POST -F "files=@test_workflow.yaml" http://127.0.0.1:5000/stressworkflow?invoc=10
 """
 @app.route('/stressworkflow', methods=['POST'])
 def stressWorkflow():

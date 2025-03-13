@@ -23,9 +23,9 @@ class WorkflowProcessor:
         # self.build_and_deploy_functions()
         # InfluxDB configuration
         url = "http://localhost:8086"         # Update if your InfluxDB endpoint is different
-        token = "cYdU0evPogU3_-2gmUBA72U3saY_666UsSh6-zXM8nr_8WHPbNXmCp-cNCPP2JqmCN3ON8Vy-Vgv8koDfYQbGQ=="           # Replace with your InfluxDB API token
-        self.org = "test"                        # Replace with your organization name
-        self.bucket = "test"                  # Replace with the bucket name you want to write data to
+        token = "DMlMCbn3k8jGh_YVWR0EA2G-QkIgikM3xjlLR4svb7eNkiSd1NSFlrMxZJh4rA6hHRpYOpckmLS2bTQFZY4bSA=="           # Replace with your InfluxDB API token
+        self.org = "testorg"                        # Replace with your organization name
+        self.bucket = "testbucket"                  # Replace with the bucket name you want to write data to
 
         # Create a client instance
         self.client = InfluxDBClient(url=url, token=token, org=self.org, timeout=30000)
@@ -91,10 +91,9 @@ class WorkflowProcessor:
         print(pipeline_end_to_end_time)
 
 
-###### STORE DATA THETN SAVE AT END OF STRESS TEST
     def stress(self, invoc):    
         print("lol stress " + str(invoc))
-        sleeptime = (invoc - 1) * 4
+        sleeptime = (invoc - 1) * 2
         print("sleeping " + str(sleeptime))
         time.sleep(sleeptime)
         start_time = time.time()
@@ -124,7 +123,7 @@ class WorkflowProcessor:
             # .tag("frame", str(frame))          # optional tag
             .tag("invoc", str(0))
             .field("end_to_end_time", pipeline_end_to_end_time)         # field value
-            .time(datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'))  # current UTC timestamp
+            .time(datetime.datetime.utcnow().isoformat())  # current UTC timestamp
         )
         # self.write_api.write(bucket=self.bucket, org=self.org, record=point)
         print(pipeline_end_to_end_time)
