@@ -40,6 +40,9 @@ def store_to_minio(bucket, ret,all):
     try:
         os.chdir(ret)
         for file in files:
+            if not os.path.exists(file):
+                print(f"File has been removed or is not available: {file}")
+                continue  # Skip the missing file
             minio_client.fput_object(bucket, file, file)
             all.append(file)
         return
@@ -194,8 +197,8 @@ def handle(req):
                     upload_end = time.time()
                     upload_time_gauge.set(upload_end - upload_start)
                     # os.remove(new_file)
-                    if os.path.exists(outdir):
-                        shutil.rmtree(outdir)
+                    # if os.path.exists(outdir):
+                    #     shutil.rmtree(outdir)
                 else:
                     store_to_local_storage(mountPath,outputBucket,outdir,all)
         
