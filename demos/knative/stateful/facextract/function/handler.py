@@ -38,12 +38,13 @@ def store_to_minio(bucket, ret,all):
 
     # Put an object.
     try:
-        os.chdir(ret)
         for file in files:
-            if not os.path.exists(file):
-                print(f"File has been removed or is not available: {file}")
+            abs_path = os.path.join(ret, file)
+            if not os.path.exists(abs_path):
+                print(f"File has been removed or is not available: {abs_path}")
                 continue  # Skip the missing file
-            minio_client.fput_object(bucket, file, file)
+            logging.info("abs path is: " + abs_path)
+            minio_client.fput_object(bucket, file, abs_path)
             all.append(file)
         return
     except InvalidResponseError as err:
@@ -193,7 +194,7 @@ def handle(req):
                     
                 if storageMode == 'obj':
                     upload_start = time.time()
-                    store_to_minio(outputBucket, outdir,all)
+                    store_to_minio(outputBucket, outdir, all)
                     upload_end = time.time()
                     upload_time_gauge.set(upload_end - upload_start)
                     # os.remove(new_file)

@@ -93,9 +93,9 @@ class WorkflowProcessor:
 
     def stress(self, invoc):    
         print("lol stress " + str(invoc))
-        sleeptime = (invoc - 1) * 2
-        print("sleeping " + str(sleeptime))
-        time.sleep(sleeptime)
+        # sleeptime = (invoc - 1) * 0
+        # print("sleeping " + str(sleeptime))
+        # time.sleep(sleeptime)
         start_time = time.time()
         input_data=None
         print(f"funcs len is {len(self.execution_order.items())}")
@@ -108,7 +108,7 @@ class WorkflowProcessor:
                 print("Pipeline workflow cannot have two or more functions at the same level")
                 return
             
-            service_url = get_knative_service_url(func['name']) 
+            service_url = get_knative_service_url(func['name'])
             # Call the knative function/service
             print("Calling " + func['name'])
             response = requests.post(service_url, json=input_data)
@@ -121,7 +121,7 @@ class WorkflowProcessor:
         point = (
             Point("end_to_end_time")               # measurement name
             # .tag("frame", str(frame))          # optional tag
-            .tag("invoc", str(0))
+            .tag("invoc", str(invoc))
             .field("end_to_end_time", pipeline_end_to_end_time)         # field value
             .time(datetime.datetime.utcnow().isoformat())  # current UTC timestamp
         )
@@ -138,7 +138,8 @@ class WorkflowProcessor:
         pool = multiprocessing.Pool(processes=invoc_count)
 
         # input list
-        inputs = range(1, invoc_count+1)
+        # inputs = range(1, invoc_count+1)
+        inputs = [invoc_count] * invoc_count
 
         # map the function to the list and pass
         # function and input list as arguments

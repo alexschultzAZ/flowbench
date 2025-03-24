@@ -65,9 +65,13 @@ def store_to_minio(bucket, ret,all):
 
     # Put an object.
     try:
-        os.chdir(ret)
         for file in files:
-            minio_client.fput_object(bucket, file, file)
+            abs_path = os.path.join(ret, file)
+            logging.info("abs path is: " + abs_path)
+            if not os.path.exists(abs_path):
+                print(f"File has been removed or is not available: {abs_path}")
+                continue  # Skip the missing file
+            minio_client.fput_object(bucket, file, abs_path)
             all.append(file)
         return
     except InvalidResponseError as err:
