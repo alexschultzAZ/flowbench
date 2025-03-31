@@ -1,7 +1,7 @@
 #!/bin/bash
 
 sudo snap install microk8s --classic
-
+sudo microk8s enable community
 sudo microk8s enable dns
 sudo microk8s enable istio
 sudo microk8s enable helm
