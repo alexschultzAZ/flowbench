@@ -223,7 +223,7 @@ def handle(req):
 
    
     
-    push_to_gateway(pushGateway, job=funcName, registry=registry)
+    # push_to_gateway(pushGateway, job=funcName, registry=registry)
     logging.info(f'modect files length is {len(files)}')
     response = {"bucketName" : outputBucket, "fileName" : files, "start_time": start_time}
     return response

@@ -23,7 +23,7 @@ class WorkflowProcessor:
         # self.build_and_deploy_functions()
         # InfluxDB configuration
         url = "http://localhost:8086"         # Update if your InfluxDB endpoint is different
-        token = "DMlMCbn3k8jGh_YVWR0EA2G-QkIgikM3xjlLR4svb7eNkiSd1NSFlrMxZJh4rA6hHRpYOpckmLS2bTQFZY4bSA=="           # Replace with your InfluxDB API token
+        token = "HsVegDZ9D7ZOrbJBcv5IqzfrkhtyvdIR7Zde8qzyJI4hjgZpg87ffsG3yt7cBHAvzCHohSdYVXoivmL22jJlXQ=="           # Replace with your InfluxDB API token
         self.org = "testorg"                        # Replace with your organization name
         self.bucket = "testbucket"                  # Replace with the bucket name you want to write data to
 

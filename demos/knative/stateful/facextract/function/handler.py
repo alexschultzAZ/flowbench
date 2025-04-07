@@ -204,6 +204,6 @@ def handle(req):
                     store_to_local_storage(mountPath,outputBucket,outdir,all)
         
         
-    push_to_gateway(pushGateway, job=funcName, registry=registry)
+    # push_to_gateway(pushGateway, job=funcName, registry=registry)
     response = {"bucketName" : outputBucket, "fileName" : all, "start_time": start_time}
     return response

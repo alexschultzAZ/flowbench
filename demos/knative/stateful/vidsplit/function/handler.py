@@ -280,6 +280,6 @@ def handle(req):
     except Exception as e:
         logging.error(f'Exception : {str(e)}')
         response = {f"Exception: {str(e)}"}
-    push_to_gateway(pushGateway, job=funcName, registry=registry)
+    # push_to_gateway(pushGateway, job=funcName, registry=registry)
     response = {"bucketName" : outputBucket, "fileName" : files[0], "pipeline_start_time": start_time}
     return response

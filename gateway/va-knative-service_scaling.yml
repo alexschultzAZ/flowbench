@@ -24,7 +24,7 @@ spec:
         - name: MN_FS
           value: 'False'
         - name: ENDPOINTINPUT
-          value: 172.17.0.2:9000
+          value: 192.168.1.99:9000
         - name: PUSHGATEWAY_IP
           value: prom-pushgateway.default.svc.cluster.local:9091
         image: flowbench2024/kn-vidsplit-stateless
@@ -61,7 +61,7 @@ spec:
         - name: MN_FS
           value: 'False'
         - name: ENDPOINTINPUT
-          value: 172.17.0.2:9000
+          value: 192.168.1.99:9000
         - name: PUSHGATEWAY_IP
           value: prom-pushgateway.default.svc.cluster.local:9091
         image: flowbench2024/kn-modect-stateless
@@ -98,7 +98,7 @@ spec:
         - name: MN_FS
           value: 'False'
         - name: ENDPOINTINPUT
-          value: 172.17.0.2:9000
+          value: 192.168.1.99:9000
         - name: PUSHGATEWAY_IP
           value: prom-pushgateway.default.svc.cluster.local:9091
         image: flowbench2024/kn-facextract-stateless
@@ -133,7 +133,7 @@ spec:
         - name: MN_FS
           value: 'False'
         - name: ENDPOINTINPUT
-          value: 172.17.0.2:9000
+          value: 192.168.1.99:9000
         - name: PUSHGATEWAY_IP
           value: prom-pushgateway.default.svc.cluster.local:9091
         image: flowbench2024/kn-facerec-stateless
