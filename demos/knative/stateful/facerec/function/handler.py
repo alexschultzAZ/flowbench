@@ -211,5 +211,6 @@ def handle(req):
                 else:
                     store_to_local_storage(mountPath,outputBucket,outdir,all)
     
+    # test comment
     response = {"bucketName" : outputBucket, "fileName" : all}
     return response 

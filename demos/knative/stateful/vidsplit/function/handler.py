@@ -281,5 +281,6 @@ def handle(req):
         logging.error(f'Exception : {str(e)}')
         response = {f"Exception: {str(e)}"}
     # push_to_gateway(pushGateway, job=funcName, registry=registry)
+    # test comment
     response = {"bucketName" : outputBucket, "fileName" : files[0], "pipeline_start_time": start_time}
     return response
