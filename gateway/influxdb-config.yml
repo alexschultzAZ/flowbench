@@ -69,3 +69,4 @@ spec:
     - ReadWriteOnce
   hostPath:
     path: "/mnt/data"
+
