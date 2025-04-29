@@ -14,7 +14,12 @@ def mst_to_unix_timestamp(date_string, time_string):
 
 # # Define the Prometheus server URL and the query
 prometheus_url = 'http://localhost:9090/api/v1/query_range'
-query_cpu_usage_time = 'container_cpu_usage_seconds_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container=~"user-container"}'
+# query_cpu_usage_time = 'container_cpu_usage_seconds_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container=~"user-container"}'
+# query_memory = 'container_memory_usage_bytes{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*"}'
+# query_network_transmit = 'container_network_transmit_bytes_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*"}'
+# query_network_receive = 'container_network_receive_bytes_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*"}'
+# query_cpu_percentage = 'sum (rate (container_cpu_usage_seconds_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container=~"user-container"}[60s])) / sum (machine_cpu_cores) * 100'
+query_cpu_usage_time = 'node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container="user-container"}'
 query_memory = 'container_memory_usage_bytes{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*"}'
 query_network_transmit = 'container_network_transmit_bytes_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*"}'
 query_network_receive = 'container_network_receive_bytes_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*"}'
@@ -23,10 +28,10 @@ query_cpu_percentage = 'sum (rate (container_cpu_usage_seconds_total{pod=~"vidsp
 queries = [query_cpu_usage_time, query_memory, query_network_receive, query_network_transmit]
 
 # Input your local MST time
-start_date = '2024-11-26'  # Example date
-start_time = '23:34:00'    # Example start time
-end_date = '2024-11-26'    # Example date
-end_time = '23:36:00'      # Example end time
+start_date = '2025-04-22'  # Example date
+start_time = '15:44:00'    # Example start time
+end_date = '2025-04-22'    # Example date
+end_time = '15:48:00'      # Example end time
 
 # Convert MST time to Unix timestamp
 start = mst_to_unix_timestamp(start_date, start_time)

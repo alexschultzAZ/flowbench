@@ -179,6 +179,7 @@ def string_to_bool(value):
         return False
 # if __name__ == "__main__":
 def handle(req):
+    logging.info("req is: " + str(req))
     start_time = time.time()
     bucket = ''
     file = ''
@@ -200,15 +201,18 @@ def handle(req):
     # total_time_gauge = Gauge(f'time_taken_{funcName}', f'Time took to process this {funcName}', registry=registry)
 
     try:
-        logging.info("hello")
-        if storage_mode == 'http':
-            file = os.getenv("Http_Referer")
-            new_file = f"/tmp/{datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}-{file}"
-            with open(new_file, "wb+") as f:
-                f.write(sys.stdin.buffer.read())
+        logging.info("hello7")
+        logging.info("storage mode is " + str(storage_mode))
+        logging.info(str(type(storage_mode)))
+        # if storage_mode == 'http':
+        #     print("in http")
+        #     file = os.getenv("Http_Referer")
+        #     new_file = f"/tmp/{datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}-{file}"
+        #     with open(new_file, "wb+") as f:
+        #         f.write(sys.stdin.buffer.read())
 
-            outdir = solve(new_file, file.split(".")[0])
-        else:
+        #     outdir = solve(new_file, file.split(".")[0])
+        # else:
             # print("Enter")
             # st = get_stdin()
             # bucket, file = st.split(' ')
@@ -216,26 +220,32 @@ def handle(req):
             # print(file)
             #print(req)
             #req = dict(item.split("=") for item in req.split("&"))
-            bucket = req["bucketName"]
-            file = req["fileName"]
-            if storage_mode == 'local':
-                response_msg, isPresent = load_from_local_storage(mount_path, bucket, file)
-                if isPresent:
-                    new_file = response_msg
-                    outdir = solve(new_file, file.split(".")[0])
-                else:
-                    print('No input file to read')
-                    print(response_msg)
-                    exit(1)
-            else: 
-                load_start = time.time()
-                new_file = load_from_minio(bucket, file)
-                load_end = time.time()
-                download_time_gauge.set(load_end - load_start)
-                compute_start = time.time()
+        logging.info("req is:")
+        logging.info(str(req))
+        bucket = req["bucketName"]
+        file = req["fileName"]
+        
+        if storage_mode == 'local':
+            logging.info("in loca")
+            logging.info("mount_path is " + str(mount_path))
+            response_msg, isPresent = load_from_local_storage(mount_path, bucket, file)
+            if isPresent:
+                logging.info("is present")
+                new_file = response_msg
                 outdir = solve(new_file, file.split(".")[0])
-                compute_end = time.time()
-                computation_time_gauge.set(compute_end - compute_start)
+            else:
+                logging.info('No input file to read')
+                logging.info(response_msg)
+                exit(1)
+        else: 
+            load_start = time.time()
+            new_file = load_from_minio(bucket, file)
+            load_end = time.time()
+            download_time_gauge.set(load_end - load_start)
+            compute_start = time.time()
+            outdir = solve(new_file, file.split(".")[0])
+            compute_end = time.time()
+            computation_time_gauge.set(compute_end - compute_start)
 
         if outdir:
             files = os.listdir(outdir)

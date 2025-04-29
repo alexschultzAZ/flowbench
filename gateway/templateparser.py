@@ -5,6 +5,7 @@ import datetime
 import multiprocessing
 import json
 import time
+from random import randrange
 import requests
 import argparse
 from influxdb_client import InfluxDBClient, Point, WritePrecision
@@ -23,9 +24,12 @@ class WorkflowProcessor:
         # self.build_and_deploy_functions()
         # InfluxDB configuration
         url = "http://localhost:8086"         # Update if your InfluxDB endpoint is different
-        token = "HsVegDZ9D7ZOrbJBcv5IqzfrkhtyvdIR7Zde8qzyJI4hjgZpg87ffsG3yt7cBHAvzCHohSdYVXoivmL22jJlXQ=="           # Replace with your InfluxDB API token
-        self.org = "testorg"                        # Replace with your organization name
-        self.bucket = "testbucket"                  # Replace with the bucket name you want to write data to
+        # token = "HsVegDZ9D7ZOrbJBcv5IqzfrkhtyvdIR7Zde8qzyJI4hjgZpg87ffsG3yt7cBHAvzCHohSdYVXoivmL22jJlXQ=="           # Replace with your InfluxDB API token
+        # self.org = "testorg"                        # Replace with your organization name
+        # self.bucket = "testbucket"                  # Replace with the bucket name you want to write data to
+        token = "cYdU0evPogU3_-2gmUBA72U3saY_666UsSh6-zXM8nr_8WHPbNXmCp-cNCPP2JqmCN3ON8Vy-Vgv8koDfYQbGQ=="           # Replace with your InfluxDB API token
+        self.org = "test"                        # Replace with your organization name
+        self.bucket = "test"                  # Replace with the bucket name you want to write data to
 
         # Create a client instance
         self.client = InfluxDBClient(url=url, token=token, org=self.org, timeout=30000)
@@ -91,43 +95,62 @@ class WorkflowProcessor:
         print(pipeline_end_to_end_time)
 
 
-    def stress(self, invoc):    
-        print("lol stress " + str(invoc))
-        # sleeptime = (invoc - 1) * 0
-        # print("sleeping " + str(sleeptime))
-        # time.sleep(sleeptime)
+    def stress(self, input_tuple):    
+        invoc_iter = input_tuple[0]
+        invoc_count = input_tuple[1]
+        concurrent_fns = 20
+        time_between_concurrent_fns = 2
+        sleeptime = (invoc_iter % concurrent_fns) * time_between_concurrent_fns
+        print("sleeping " + str(sleeptime))
+        time.sleep(sleeptime)
         start_time = time.time()
         input_data=None
-        print(f"funcs len is {len(self.execution_order.items())}")
+        # print(f"funcs len is {len(self.execution_order.items())}")
+        exception_encountered = False
         for __, func_list in self.execution_order.items():
             func = func_list[0]
             if input_data is None:
                 input_data = func['data']
-            print(f"func = {func}, input_data = {input_data}")
+            # print(f"func = {func}, input_data = {input_data}")
             if(len(func_list) > 1):
                 print("Pipeline workflow cannot have two or more functions at the same level")
                 return
+            try:
+                service_url = get_knative_service_url(func['name'])
+                # Call the knative function/service
+                print("Calling " + func['name'])
+                response = requests.post(service_url, json=input_data)
+                # print("Response =",response.text)
+                input_data = response.json()
+                print("Called " + func['name'])
+            except Exception as e:
+                exception_encountered = True
+                print("exception encountered: " + str(e))
             
-            service_url = get_knative_service_url(func['name'])
-            # Call the knative function/service
-            print("Calling " + func['name'])
-            response = requests.post(service_url, json=input_data)
-            print("Response =",response.text)
-            input_data = response.json()
-            print("Called " + func['name'])
-            
-
-        pipeline_end_to_end_time = time.time() - start_time
-        point = (
-            Point("end_to_end_time")               # measurement name
-            # .tag("frame", str(frame))          # optional tag
-            .tag("invoc", str(invoc))
-            .field("end_to_end_time", pipeline_end_to_end_time)         # field value
-            .time(datetime.datetime.utcnow().isoformat())  # current UTC timestamp
-        )
-        # self.write_api.write(bucket=self.bucket, org=self.org, record=point)
-        print(pipeline_end_to_end_time)
-        return point
+        if not exception_encountered:
+            pipeline_end_to_end_time = time.time() - start_time
+            point = (
+                Point("end_to_end_time")               # measurement name
+                # .tag("frame", str(frame))          # optional tag
+                .tag("invoc_count", str(invoc_count))
+                .tag("invoc", str(invoc_iter))
+                .field("end_to_end_time", pipeline_end_to_end_time)         # field value
+                .time(datetime.datetime.utcnow().isoformat())  # current UTC timestamp
+            )
+            # self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+            #print(pipeline_end_to_end_time)
+            return point
+        else:
+            point = (
+                Point("end_to_end_time")               # measurement name
+                # .tag("frame", str(frame))          # optional tag
+                .tag("invoc_count", str(invoc_count))
+                .tag("invoc", str(invoc_iter))
+                .field("end_to_end_time", 99999.999)         # field value
+                .time(datetime.datetime.utcnow().isoformat())  # current UTC timestamp
+            )
+            # self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+            return point
 
     def stress_pipeline(self, invoc_count):
         invoc_count = int(invoc_count)
@@ -138,12 +161,13 @@ class WorkflowProcessor:
         pool = multiprocessing.Pool(processes=invoc_count)
 
         # input list
-        # inputs = range(1, invoc_count+1)
-        inputs = [invoc_count] * invoc_count
+        invoc_iter = list(range(1, invoc_count+1))
+        invoc_count = [invoc_count] * invoc_count
+        input_list_tuples = [(x, y) for x, y in zip(invoc_iter, invoc_count)]
 
         # map the function to the list and pass
         # function and input list as arguments
-        outputs = pool.map(self.stress, inputs)
+        outputs = pool.map(self.stress, input_list_tuples)
         self.write_api.write(bucket=self.bucket, org=self.org, record=outputs, write_precision="ms")
         # prevResponse = {"bucketName" : "stage0", "fileName" : "test_00.mp4"}
         print("here lol")
@@ -322,7 +346,7 @@ def get_knative_service_url(service_name):
 
             # The second line contains the name and URL
             name, url = output[1].split()
-            print(url)
+            # print(url)
             return url
         except Exception as e:
             print(f"An error occurred: {e}")
