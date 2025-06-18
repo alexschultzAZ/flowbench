@@ -1,0 +1,76 @@
+provider:
+  name: knative
+
+
+workflow_logic:
+  name: pipeline
+
+functions:
+
+  vidsplit:
+    name: vidsplit
+    image: flowbench2024/kn-vidsplit-stateless
+    order: 1
+    data:
+      bucketName: "stage0"
+      fileName: "test_01.mp4"
+    environment:
+      NEXT_URL: "http://modect.default.svc.cluster.local"
+      OUTPUTBUCKET: stage1
+      write_debug: true
+      STORAGE_TYPE: local
+      MOUNT_PATH: /mnt/local-storage
+      MN_FS: false
+      ENDPOINTINPUT: "172.17.0.1:9000"
+      PUSHGATEWAY_IP: "prom-pushgateway.default.svc.cluster.local:9091"
+   
+
+  modect:
+    name: modect
+    order: 2
+    image: flowbench2024/kn-modect-stateless
+    environment:
+      NEXT_URL: "http://facextract.default.svc.cluster.local"
+      OUTPUTBUCKET: stage2
+      STORAGE_TYPE: local
+      MOUNT_PATH: /mnt/local-storage
+      PIPELINE_STAGE: 2
+      MODECT_MIN_AREA: 5
+      MODECT_SKIP_RATE: 1
+      write_debug: true
+      MN_FS: false
+      ENDPOINTINPUT: "172.17.0.1:9000"
+      PUSHGATEWAY_IP: "prom-pushgateway.default.svc.cluster.local:9091"
+
+  facextract:
+    name: facextract
+    order: 3
+    image: flowbench2024/kn-facextract-stateless
+    environment:
+      NEXT_URL: "http://facerec.default.svc.cluster.local"
+      OUTPUTBUCKET: stage3
+      STORAGE_TYPE: local
+      MOUNT_PATH: /mnt/local-storage
+      PIPELINE_STAGE: 2
+      MODECT_MIN_AREA: 5
+      MODECT_SKIP_RATE: 1
+      write_debug: true
+      MN_FS: false
+      ENDPOINTINPUT: "172.17.0.1:9000"
+      PUSHGATEWAY_IP: "prom-pushgateway.default.svc.cluster.local:9091"
+  facerec:
+    name: facerec
+    image: harshitsharma48/facerec:latest
+    order: 4
+    image: flowbench2024/kn-facerec-stateless
+    environment:
+      OUTPUTBUCKET: stage4
+      STORAGE_TYPE: local
+      MOUNT_PATH: /mnt/local-storage
+      PIPELINE_STAGE: 2
+      MODECT_MIN_AREA: 5
+      MODECT_SKIP_RATE: 1
+      write_debug: true
+      MN_FS: false
+      ENDPOINTINPUT: "172.17.0.1:9000"
+      PUSHGATEWAY_IP: "prom-pushgateway.default.svc.cluster.local:9091"

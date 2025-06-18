@@ -4,6 +4,9 @@ import imutils
 import cv2
 import os, shutil
 
+import logging
+logging.basicConfig(level=logging.INFO)
+
 def detect(lgray, frame, min_area):
     frame = imutils.resize(frame, width=320)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -48,11 +51,14 @@ def solve(req):
 
     idx = 1
     while idx < len(pics):
+        logging.info("idx: " + str(idx))
         if skip == 1 or idx % skip == 1:
+            logging.info("not skipping)")
             segments = pics[idx].split("-")
             segments[1] = stage
             shutil.move(input_dir + "/" + pics[idx],  \
                     output_dir + "/" + "-".join(segments))
+            logging.info("moved")
         idx += 1
 
     # if one frame contains motion, hand all coming frames to the next stage, otherwise remove the frame

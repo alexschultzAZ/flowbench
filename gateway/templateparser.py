@@ -59,7 +59,7 @@ class WorkflowProcessor:
                 if order in self.execution_order:
                     self.execution_order[order].append(func_details)
                 else:
-                    self.execution_order[order] = [func_details]
+                        self.execution_order[order] = [func_details]
         self.execution_order = dict(sorted(self.execution_order.items()))
         print("Execution order data is {}".format(self.execution_order))
     

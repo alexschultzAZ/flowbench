@@ -1,0 +1,31 @@
+provider:
+  name: knative
+
+
+workflow_logic:
+  name: pipeline
+
+functions:
+
+  va-monolith:
+    name: va-monolith
+    image: flowbench2024/va-monolith
+    order: 1
+    data:
+      bucketName: "stage0"
+      fileName: "test_01.mp4"
+    environment:
+      NEXT_URL: "http://modect.default.svc.cluster.local"
+      OUTPUTBUCKET1: stage1
+      OUTPUTBUCKET2: stage2
+      OUTPUTBUCKET3: stage3
+      OUTPUTBUCKET4: stage4
+      write_debug: true
+      PIPELINE_STAGE: "2"
+      STORAGE_TYPE: obj
+      MOUNT_PATH: /mnt/local-storage
+      MN_FS: false
+      ENDPOINTINPUT: "172.17.0.1:9000"
+      MODECT_MIN_AREA: 5
+      MODECT_SKIP_RATE: 1
+      ACCELERATION: gpu

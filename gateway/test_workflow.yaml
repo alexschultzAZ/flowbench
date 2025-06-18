@@ -13,7 +13,7 @@ functions:
     order: 1
     data:
       bucketName: "stage0"
-      fileName: "test_00.mp4"
+      fileName: "test_01.mp4"
     environment:
       NEXT_URL: "http://modect.default.svc.cluster.local"
       OUTPUTBUCKET: stage1
@@ -57,7 +57,6 @@ functions:
       PUSHGATEWAY_IP: "prom-pushgateway.default.svc.cluster.local:9091"
   facerec:
     name: facerec
-    image: harshitsharma48/facerec:latest
     order: 4
     image: flowbench2024/kn-facerec-stateless
     environment:

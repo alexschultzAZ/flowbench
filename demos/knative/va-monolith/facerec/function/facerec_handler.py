@@ -7,13 +7,15 @@ import os
 import sys
 import time
 import shutil
-import requests
+from flask import jsonify
 from minio import Minio
 from minio.error import InvalidResponseError
-from prometheus_client import Gauge,CollectorRegistry,push_to_gateway
 from .handler1 import *
 from datetime import datetime
 import ast
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 MINIO_ADDRESS = os.environ["ENDPOINTINPUT"]
 minio_client = Minio(
@@ -31,20 +33,6 @@ def load_from_minio(bucket, file):
     except InvalidResponseError as err:
         print(err)
 
-def store_to_minio(bucket, ret):
-    files = os.listdir(ret)
-    if len(files) == 0:
-        return
-
-    # Put an object.
-    try:
-        os.chdir(ret)
-        for file in files:
-            minio_client.fput_object(bucket, file, file)
-        return
-    except InvalidResponseError as err:
-        print(err)
-
 def get_stdin():
     buf = ""
     while(True):
@@ -54,22 +42,12 @@ def get_stdin():
             break
     return buf
 
-def store_to_minio(bucket, ret,all):
-    files = os.listdir(ret)
-    if len(files) == 0:
-        return
-
-    # Put an object.
-    try:
-        os.chdir(ret)
-        for file in files:
-            minio_client.fput_object(bucket, file, file)
-            all.append(file)
-        return
-    except InvalidResponseError as err:
-        print(err)
-
-def store_to_local_storage(mount_path, dir_name, source_dir,all):
+def store_to_minio(mount_path, dir_name, source_dir,all):
+    logging.info("storing to local storage")
+    logging.info("mount_path: " + str(mount_path))
+    logging.info("dir_name: " + str(dir_name))
+    logging.info("source_dir: " + str(source_dir))
+    logging.info("all: " + str(all))
     try:
         files = os.listdir(source_dir)
         if len(files) == 0:
@@ -82,10 +60,13 @@ def store_to_local_storage(mount_path, dir_name, source_dir,all):
             os.makedirs(destination_dir)
        
         for file_name in files:
+            logging.info("file_name: " + file_name)
             all.append(file_name)
             src_file = os.path.join(source_dir, file_name)
-            dst_file = os.path.join(destination_dir, file_name)
-            shutil.move(src_file, dst_file)
+            # dst_file = os.path.join(destination_dir, file_name)
+            # shutil.move(src_file, dst_file)
+            minio_client.fput_object("stage4", file_name, os.path.join(source_dir, file_name))
+            
     except PermissionError as e:
         print(f"PermissionError: {e}")
     except FileNotFoundError as e:
@@ -115,6 +96,8 @@ def string_to_bool(value):
         return False
 # if __name__ == "__main__":
 def handle(req):
+    print("req is " + str(req))
+    start_time = time.time()
     load_start = 0
     load_end = 0
     _files = []
@@ -123,79 +106,33 @@ def handle(req):
     # req = ast.literal_eval(req)
     mn_fs = os.getenv("MN_FS")
     mn_fs = string_to_bool(mn_fs)
-    pushGateway = os.getenv("PUSHGATEWAY_IP")
-    registry = CollectorRegistry()
     funcName = "facerec"
-    outputBucket = os.getenv("OUTPUTBUCKET4")
-    download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
-    upload_time_gauge = Gauge(f'minio_write_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
-    computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
-    if mn_fs:
-        image_data = base64.b64decode(req["body"])
-        file = req["headers"]["Content-Disposition"].split(";")[1].split("=")[1]
-        new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
-        with open(new_file,"wb") as image_file:
-            image_file.write(image_data)
-        original_filename = file.split("-")[0]
-    else:
+    outputBucket = "stage4"
        
-        inputMode = os.getenv("INPUTMODE")
-        outputMode = os.getenv("OUTPUTMODE")
-        storageMode = os.getenv("STORAGE_TYPE")
-        bucket = req['bucketName']
-        _files = req["fileName"]
-        for file in _files:
-            original_filename = file.split("-")[0]
-            if storageMode == 'obj':
-                load_start = time.time()
-                new_file = load_from_minio(bucket, file)
-                load_end = time.time()
-                download_time_gauge.set(load_end - load_start)
-            else:
-                mountPath = os.getenv("MOUNT_PATH")
-                response, isPresent = load_from_local_storage(mountPath,bucket,file)
-                if isPresent:
-                    new_file = response
-                else:
-                    print('No input file to read')
-                    print(response)
-                    exit(1)
-            compute_start = time.time()
-            face_fun = Face()
-            outdir, name = face_fun.handler_small(new_file, original_filename)
-            compute_end = time.time()
-            computation_time_gauge.set(compute_end - compute_start)
+    bucket = req['bucketName']
+    _files = req["fileName"]
+    # pipeline_start_time = req["pipeline_start_time"]
+    for file in _files:
+        original_filename = file.split("-")[0]
+        
+        mountPath = "/tmp/"
+        response, isPresent = load_from_local_storage(mountPath,bucket,file)
+        if isPresent:
+            new_file = response
+        else:
+            print('No input file to read')
+            print(response)
+            exit(1)
+        compute_start = time.time()
+        face_fun = Face()
+        outdir, name = face_fun.handler_small(new_file, original_filename)
+        compute_end = time.time()
 
-            if outdir != None and outdir != '':
-                files = os.listdir(outdir)
-                if mn_fs:
-                    file_path = os.path.join(outdir,files[0])
-                    new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
-                    file_content = ''
-                    with open(file_path, "r") as text_file:
-                        file_content = text_file.read()
-                    with open(new_file,"w") as dest_file:
-                        dest_file.write(file_content)
-                    return {
-                        "statusCode": 200,
-                        "body": f"Written to file {files[0]}",
-                        "headers": {
-                            "Content-Type": "image/text",
-                            "Content-Disposition": f"attachment; filename={files[0]}",
-                            "Content-Transfer-Encoding": "base64"
-                        }
-                    }
-                if storageMode == 'obj':
-                    upload_start = time.time()
-                    store_to_minio(outputBucket, outdir,all)
-                    upload_end = time.time()
-                    upload_time_gauge.set(upload_end - upload_start)
-                    #os.remove(new_file)
-                    if os.path.exists(outdir):
-                        shutil.rmtree(outdir)
-                else:
-                    store_to_local_storage(mountPath,outputBucket,outdir,all)
-           
-    push_to_gateway(pushGateway, job=funcName, registry=registry)
+        if outdir != None and outdir != '':
+            files = os.listdir(outdir)
+            store_to_minio(mountPath,outputBucket,outdir,all)
+        
+    
+    # test comment
     response = {"bucketName" : outputBucket, "fileName" : all}
     return response 
