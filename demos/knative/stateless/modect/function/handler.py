@@ -5,7 +5,6 @@ import time
 import shutil
 import ast
 from minio import Minio
-from prometheus_client import Gauge,CollectorRegistry,push_to_gateway
 from minio.error import InvalidResponseError
 from datetime import datetime
 from .handle import solve
@@ -23,22 +22,31 @@ minio_client = Minio(
 )
 
 def store_to_minio(bucket, ret):
+    files_out = []
     files = os.listdir(ret)
     if len(files) == 0:
         return
-    try:
-        os.chdir(ret)
-        for file in files:
+    # logging.info("ret: " + str(ret))
+    os.chdir(ret)
+    for file in files:
+        # logging.info("flret: " + str(file))
+        try:
             minio_client.fput_object(bucket, file, file)
-        return
-    except InvalidResponseError as err:
-        logging.info(err)
+            files_out.append(file)
+        except Exception as err:
+            logging.info("skipping file: " + str(file))
+            logging.info(err)
+    return files_out
 
 
 def load_from_minio(bucket, file):
     try:
-        new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
+        logging.info("bucket: " + str(bucket))
+        logging.info("file: " + str(file))
+        new_file = f"/tmp/{datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}-{file}"
+        logging.info("new_file: " + str(new_file))
         minio_client.fget_object(bucket, file, new_file)
+        logging.info("loaded")
         return new_file
     except InvalidResponseError as err:
         logging.info(err)
@@ -96,15 +104,17 @@ def string_to_bool(value):
         return ast.literal_eval(value.capitalize())
     except (ValueError, SyntaxError):
         return False
+    
 def handle(req):
-    request_start_ts = str(round(time.time() * 1000000000))
-    function_start_time= time.time()
-    compute_start = 0
-    compute_end = 0
-    store_start = 0
-    store_end = 0
-    load_start = 0
-    load_end = 0
+    logging.info("in modect1")
+    # request_start_ts = str(round(time.time() * 1000000000))
+    # function_start_time= time.time()
+    # compute_start = 0
+    # compute_end = 0
+    # store_start = 0
+    # store_end = 0
+    # load_start = 0
+    # load_end = 0
 
     files = []
     bucket = ''
@@ -116,15 +126,9 @@ def handle(req):
     mount_path = os.getenv("MOUNT_PATH")
     outputMode = os.getenv("OUTPUTMODE")
     storageMode = os.getenv("STORAGE_TYPE")
-    pushGateway = os.getenv("PUSHGATEWAY_IP")
     mn_fs = os.getenv("MN_FS")
     mn_fs = string_to_bool(mn_fs)
-    registry = CollectorRegistry()
     funcName = "modect"
-    download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
-    upload_time_gauge = Gauge(f'minio_write_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
-    computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
-    total_time_gauge = Gauge(f'time_taken_{funcName}', f'Time took to process this {funcName}', registry=registry)
 
     if storageMode == 'http':
         file = os.getenv("Http_Referer")
@@ -134,9 +138,9 @@ def handle(req):
         f.close()
 
         original_filename = file.split("-")[0]
-        compute_start = time.time()
+        # compute_start = time.time()
         outdir = solve(new_file)
-        compute_end = time.time()
+        # compute_end = time.time()
     else:
         # st = get_stdin()
         # bucket = st.split(' ')[0]
@@ -157,15 +161,13 @@ def handle(req):
             file =  req["fileName"]
             pipeline_start_time = req["pipeline_start_time"]
             if storageMode == 'obj':
-                load_start = time.time()
+                # load_start = time.time()
                 new_file = load_from_minio(bucket, file)
-                load_end = time.time()
-                download_time_gauge.set(load_end - load_start)
+                # load_end = time.time()
                 original_filename = file.split("-")[0]
-                compute_start = time.time()
+                # compute_start = time.time()
                 outdir = solve(new_file)
-                compute_end = time.time()
-                computation_time_gauge.set(compute_end - compute_start)
+                # compute_end = time.time()
             else:
                 response_msg, isPresent = load_from_local_storage(mount_path, bucket, file)
                 if isPresent:
@@ -193,10 +195,11 @@ def handle(req):
                 }
             } 
         if storageMode == 'obj':
-            upload_start = time.time()
-            store_to_minio(outputBucket, outdir)
-            upload_end = time.time()
-            upload_time_gauge.set(upload_end - upload_start)
+            # upload_start = time.time()
+            logging.info("files was: " + str(len(files)))
+            files = store_to_minio(outputBucket, outdir)
+            logging.info("files is now: " + str(len(files)))
+            # upload_end = time.time()
             os.remove(new_file)
             if os.path.exists(outdir):
                 shutil.rmtree(outdir)
@@ -204,9 +207,6 @@ def handle(req):
             store_to_local_storage(mount_path,outputBucket,outdir)
 
    
-    total_time_gauge.set(time.time() - function_start_time)
-    
-    push_to_gateway(pushGateway, job=funcName, registry=registry)
     logging.info(f'modect files len = {len(files)}')
     response = {"bucketName" : outputBucket, "fileName" : files, "pipeline_start_time": pipeline_start_time}
     return response

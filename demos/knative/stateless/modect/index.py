@@ -9,17 +9,8 @@ app = Flask(__name__)
 def hello_world():
     print(request.json)
     ret = handler.handle(request.json)
-    service_url = os.getenv("NEXT_URL")
     
-    # Send a POST request to the service with 'ret' as the JSON payload
-    response = requests.post(service_url, json=ret)
-    
-    # Log the response status and content
-    print(f"Response Status: {response.status_code}, Response Content: {response.text}")
-    
-    # Return the response from the remote service or the result from handler
-    return response.text
-    # return ret
+    return ret
 
 
 if __name__ == "__main__":

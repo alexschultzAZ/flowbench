@@ -27,9 +27,9 @@ class WorkflowProcessor:
         # token = "HsVegDZ9D7ZOrbJBcv5IqzfrkhtyvdIR7Zde8qzyJI4hjgZpg87ffsG3yt7cBHAvzCHohSdYVXoivmL22jJlXQ=="           # Replace with your InfluxDB API token
         # self.org = "testorg"                        # Replace with your organization name
         # self.bucket = "testbucket"                  # Replace with the bucket name you want to write data to
-        token = "cYdU0evPogU3_-2gmUBA72U3saY_666UsSh6-zXM8nr_8WHPbNXmCp-cNCPP2JqmCN3ON8Vy-Vgv8koDfYQbGQ=="           # Replace with your InfluxDB API token
-        self.org = "test"                        # Replace with your organization name
-        self.bucket = "test"                  # Replace with the bucket name you want to write data to
+        token = "HsVegDZ9D7ZOrbJBcv5IqzfrkhtyvdIR7Zde8qzyJI4hjgZpg87ffsG3yt7cBHAvzCHohSdYVXoivmL22jJlXQ=="           # Replace with your InfluxDB API token
+        self.org = "testorg"                        # Replace with your organization name
+        self.bucket = "testbucket"                  # Replace with the bucket name you want to write data to    #CHANGE ALL THE ABOVE STUFF PER MACHINE
 
         # Create a client instance
         self.client = InfluxDBClient(url=url, token=token, org=self.org, timeout=30000)
@@ -98,12 +98,15 @@ class WorkflowProcessor:
     def stress(self, input_tuple):    
         invoc_iter = input_tuple[0]
         invoc_count = input_tuple[1]
-        concurrent_fns = 20
-        time_between_concurrent_fns = 2
-        sleeptime = (invoc_iter % concurrent_fns) * time_between_concurrent_fns
+        # concurrent_fns = 1
+        # time_between_concurrent_fns = 2
+        # sleeptime = (invoc_iter % concurrent_fns) * time_between_concurrent_fns
+        # print("sleeping " + str(sleeptime))
+        # time.sleep(sleeptime)
+        sleeptime = invoc_iter * 2
         print("sleeping " + str(sleeptime))
         time.sleep(sleeptime)
-        start_time = time.time()
+        pipeline_start_time = time.time()
         input_data=None
         # print(f"funcs len is {len(self.execution_order.items())}")
         exception_encountered = False
@@ -118,17 +121,17 @@ class WorkflowProcessor:
             try:
                 service_url = get_knative_service_url(func['name'])
                 # Call the knative function/service
-                print("Calling " + func['name'])
+                # print("Calling " + func['name'])
                 response = requests.post(service_url, json=input_data)
                 # print("Response =",response.text)
                 input_data = response.json()
-                print("Called " + func['name'])
+                # print("Called " + func['name'])
             except Exception as e:
                 exception_encountered = True
-                print("exception encountered: " + str(e))
+                print("exception encountered calling " + str(service_url) + " " + str(invoc_iter) + ": " + str(e))
             
         if not exception_encountered:
-            pipeline_end_to_end_time = time.time() - start_time
+            pipeline_end_to_end_time = time.time() - pipeline_start_time
             point = (
                 Point("end_to_end_time")               # measurement name
                 # .tag("frame", str(frame))          # optional tag
