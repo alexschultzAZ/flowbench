@@ -6,6 +6,13 @@ sudo microk8s enable dns
 sudo microk8s enable istio
 sudo microk8s enable helm
 
+alias kubectl='microk8s kubectl'
+sudo snap alias microk8s.kubectl kubectl
+
+# this is to not eat up too much cpu
+microk8s kubectl scale deployment istio-ingressgateway --replicas=1 -n istio-system
+
+
 microk8s kubectl apply --filename https://github.com/knative/serving/releases/download/knative-v1.12.1/serving-crds.yaml
 microk8s kubectl apply --filename https://github.com/knative/serving/releases/download/knative-v1.12.1/serving-core.yaml
 
@@ -17,7 +24,6 @@ microk8s kubectl apply -f https://github.com/knative/serving/releases/download/k
 microk8s kubectl apply -f https://github.com/knative/eventing/releases/download/knative-v1.14.0/eventing-crds.yaml
 microk8s kubectl apply -f https://github.com/knative/eventing/releases/download/knative-v1.14.0/eventing-core.yaml
 
-microk8s kubectl scale deployment istio-ingressgateway --replicas=1 -n istio-system
 
 KUBELET_ARGS_FILE="/var/snap/microk8s/current/args/kubelet"
 
@@ -33,6 +39,7 @@ if ! grep -q "read-only-port=10255" "$KUBELET_ARGS_FILE"; then
     echo "--read-only-port=10255" | sudo tee -a "$KUBELET_ARGS_FILE"
 fi
 
+# make sure you have the gateway repo and cd to it
 cd demos/knative
 microk8s helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 microk8s helm repo update
@@ -50,6 +57,7 @@ microk8s helm install prometheus prometheus-community/kube-prometheus-stack -n d
 
 microk8s kubectl apply -f https://raw.githubusercontent.com/knative-extensions/monitoring/main/servicemonitor.yaml
 
+
 sudo apt install -y tmux
 
 PROMETHEUS_SESSION_NAME="prometheus-port-forward"
@@ -65,7 +73,7 @@ echo "Access the Prometheus dashboard at http://localhost:9090"
 
 echo "To view the port-forwarding session, attach to it by running: tmux attach-session -t $PROMETHEUS_SESSION_NAME"
 
-sudo docker run -d -p 9091:9091 prom/pushgateway
+# INSTALL DOCKER IF NOT ALREADY INSTALLED !!!!!!!!
 
 sudo docker run -d -p 9000:9000 -p 9001:9001 --name minio1 \
   -e "MINIO_ROOT_USER=minioadmin" \
@@ -85,5 +93,17 @@ tmux new-session -d -s $KNATIVE_LOCAL_GATEWAY_SESSION "microk8s kubectl port-for
 echo "Started port-forwarding in a new tmux session named '$KNATIVE_LOCAL_GATEWAY_SESSION'."
 
 microk8s enable metallb:10.64.140.43-10.64.140.49
+
+# add influxdb setup
+cd ../../gateway
+microk8s helm repo add influxdata https://helm.influxdata.com/
+microk8s helm repo update
+microk8s kubectl apply -f influxdb-config.yml # NEED TO FIND THIS - found it in gateway - adding to repo
+if tmux has-session -t INFLUXDB_PORT_FORWARD 2>/dev/null; then
+    echo "The tmux session 'INFLUXDB_PORT_FORWARD' already exists. Deleting it..."
+    tmux kill-session -t INFLUXDB_PORT_FORWARD
+fi
+tmux new-session -d -s INFLUXDB_PORT_FORWARD "microk8s kubectl  port-forward -n default svc/influxdb 8086:8086 -n influxdb"
+# go to localhost:8086, hit GET STARTED, testusername, testpass, test, test, navigate to API Tokens, click testusername's token, copy and paste the token to templateparser.py along with the org and bucket name
 
 echo "Setup complete!!"

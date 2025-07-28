@@ -7,14 +7,13 @@ spec:
   template:
     metadata:
       annotations:
-        autoscaling.knative.dev/metric: concurrency
+        # autoscaling.knative.dev/metric: concurrency
         autoscaling.knative.dev/min-scale: '1'
-        autoscaling.knative.dev/target: '20'
+        autoscaling.knative.dev/max-scale: '1'
+        autoscaling.knative.dev/target: '1'
     spec:
       containers:
       - env:
-        - name: NEXT_URL
-          value: http://modect.default.svc.cluster.local
         - name: OUTPUTBUCKET
           value: stage1
         - name: write_debug
@@ -24,9 +23,7 @@ spec:
         - name: MN_FS
           value: 'False'
         - name: ENDPOINTINPUT
-          value: 172.17.0.1:9000
-        - name: PUSHGATEWAY_IP
-          value: prom-pushgateway.default.svc.cluster.local:9091
+          value: 192.168.1.99:9000
         image: flowbench2024/kn-vidsplit-stateless
 ---
 apiVersion: serving.knative.dev/v1
@@ -38,9 +35,10 @@ spec:
   template:
     metadata:
       annotations:
-        autoscaling.knative.dev/metric: concurrency
+        # autoscaling.knative.dev/metric: concurrency
         autoscaling.knative.dev/min-scale: '1'
-        autoscaling.knative.dev/target: '20'
+        autoscaling.knative.dev/max-scale: '1'
+        autoscaling.knative.dev/target: '1'
     spec:
       containers:
       - env:
@@ -61,9 +59,7 @@ spec:
         - name: MN_FS
           value: 'False'
         - name: ENDPOINTINPUT
-          value: 172.17.0.1:9000
-        - name: PUSHGATEWAY_IP
-          value: prom-pushgateway.default.svc.cluster.local:9091
+          value: 192.168.1.99:9000
         image: flowbench2024/kn-modect-stateless
 ---
 apiVersion: serving.knative.dev/v1
@@ -75,9 +71,10 @@ spec:
   template:
     metadata:
       annotations:
-        autoscaling.knative.dev/metric: concurrency
+        # autoscaling.knative.dev/metric: concurrency
         autoscaling.knative.dev/min-scale: '1'
-        autoscaling.knative.dev/target: '20'
+        autoscaling.knative.dev/max-scale: '1'
+        autoscaling.knative.dev/target: '1'
     spec:
       containers:
       - env:
@@ -98,9 +95,7 @@ spec:
         - name: MN_FS
           value: 'False'
         - name: ENDPOINTINPUT
-          value: 172.17.0.1:9000
-        - name: PUSHGATEWAY_IP
-          value: prom-pushgateway.default.svc.cluster.local:9091
+          value: 192.168.1.99:9000
         image: flowbench2024/kn-facextract-stateless
 ---
 apiVersion: serving.knative.dev/v1
@@ -112,9 +107,10 @@ spec:
   template:
     metadata:
       annotations:
-        autoscaling.knative.dev/metric: concurrency
+        # autoscaling.knative.dev/metric: concurrency
         autoscaling.knative.dev/min-scale: '1'
-        autoscaling.knative.dev/target: '20'
+        autoscaling.knative.dev/max-scale: '1'
+        autoscaling.knative.dev/target: '1'
     spec:
       containers:
       - env:
@@ -133,7 +129,5 @@ spec:
         - name: MN_FS
           value: 'False'
         - name: ENDPOINTINPUT
-          value: 172.17.0.1:9000
-        - name: PUSHGATEWAY_IP
-          value: prom-pushgateway.default.svc.cluster.local:9091
+          value: 192.168.1.99:9000
         image: flowbench2024/kn-facerec-stateless
