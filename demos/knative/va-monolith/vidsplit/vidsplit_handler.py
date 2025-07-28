@@ -47,7 +47,6 @@ def load_from_bucket():
 def solve(req, original_filename):
     #print("stage 1 vidsplit...")
     output_dir = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
-    logging.info("output_dir is " + str(output_dir))
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -115,17 +114,14 @@ def store_to_minio(bucket, ret):
             if not os.path.exists(abs_path):
                 print(f"File has been removed or is not available: {abs_path}")
                 continue  # Skip the missing file
-            logging.info("abs path is: " + abs_path)
             minio_client.fput_object(bucket, file, abs_path)
     except InvalidResponseError as err:
         print(err)
 
 def load_from_minio(bucket, file):
     try:
-        logging.info("loading from minio")
         new_file = f"/tmp/{datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}-{file}"
         minio_client.fget_object(bucket, file, new_file)
-        logging.info("got it")
         return new_file
     except InvalidResponseError as err:
         logging.info("error: " + str(err))
@@ -174,7 +170,6 @@ def store_to_local_storage(mount_path, dir_name, source_dir):
             src_file = os.path.join(source_dir, file_name)
             dst_file = os.path.join(destination_dir, file_name)
             shutil.move(src_file, dst_file)
-            logging.info("moved to " + str(os.path.join(destination_dir, file_name)))
     except PermissionError as e:
         print(f"PermissionError: {e}")
     except FileNotFoundError as e:
@@ -304,6 +299,7 @@ def handle(req):
         response = {f"Exception: {str(e)}"}
     # push_to_gateway(pushGateway, job=funcName, registry=registry)
     # test comment
+    logging.info("vidsplit time was " + str(time.time() - start_time))
     response = {"bucketName" : outputBucket, "fileName" : files[0], "pipeline_start_time": start_time, "outdir": outdir}
     logging.info("done with vidsplit")
     return response

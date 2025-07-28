@@ -25,12 +25,8 @@ def get_stdin():
 
 
 def store_to_local_storage(mount_path, dir_name, source_dir):
-    logging.info("mount path: " + str(mount_path))
-    logging.info("dir_name: " + str(dir_name))
-    logging.info("source_dir: " +  str(source_dir))
     try:
         files = os.listdir(source_dir)
-        logging.info("files: " + str(files))
         if len(files) == 0:
             return
         if not os.path.exists(mount_path):
@@ -44,7 +40,6 @@ def store_to_local_storage(mount_path, dir_name, source_dir):
             src_file = os.path.join(source_dir, file_name)
             dst_file = os.path.join(destination_dir, file_name)
             shutil.move(src_file, dst_file)
-            logging.info("moved " + str(os.path.join(source_dir, file_name)) + " to " + str(os.path.join(destination_dir, file_name)))
     except PermissionError as e:
         print(f"PermissionError: {e}")
     except FileNotFoundError as e:
@@ -54,9 +49,6 @@ def store_to_local_storage(mount_path, dir_name, source_dir):
 
 
 def load_from_local_storage(mount_path, input_dir, filename):
-    logging.info("mount_path: " + str(mount_path))
-    logging.info("input_dir: " + str(input_dir))
-    logging.info("filename: " + str(filename))
 
     if not os.path.exists(os.path.join(mount_path, input_dir)):
         return f"Directory '{input_dir}' does not exist.", False
@@ -69,7 +61,6 @@ def load_from_local_storage(mount_path, input_dir, filename):
     if not os.path.isfile(file_path):
         return f"File '{filename}' does not exist in the directory '{os.path.join(mount_path, input_dir)}'.", False
     
-    logging.info("loaded file")
     return file_path,True
 
 
@@ -112,5 +103,6 @@ def handle(req):
         logging.info("stored to local")
 
     logging.info(f'modect files length is {len(files)}')
+    logging.info("modect time was " + str(time.time() - start_time))
     response = {"bucketName" : outputBucket, "fileName" : files, "start_time": start_time}
     return response

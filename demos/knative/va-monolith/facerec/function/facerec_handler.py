@@ -43,11 +43,6 @@ def get_stdin():
     return buf
 
 def store_to_minio(mount_path, dir_name, source_dir,all):
-    logging.info("storing to local storage")
-    logging.info("mount_path: " + str(mount_path))
-    logging.info("dir_name: " + str(dir_name))
-    logging.info("source_dir: " + str(source_dir))
-    logging.info("all: " + str(all))
     try:
         files = os.listdir(source_dir)
         if len(files) == 0:
@@ -60,7 +55,6 @@ def store_to_minio(mount_path, dir_name, source_dir,all):
             os.makedirs(destination_dir)
        
         for file_name in files:
-            logging.info("file_name: " + file_name)
             all.append(file_name)
             src_file = os.path.join(source_dir, file_name)
             # dst_file = os.path.join(destination_dir, file_name)
@@ -96,6 +90,7 @@ def string_to_bool(value):
         return False
 # if __name__ == "__main__":
 def handle(req):
+    
     print("req is " + str(req))
     start_time = time.time()
     load_start = 0
@@ -134,5 +129,6 @@ def handle(req):
         
     
     # test comment
+    logging.info("facerec time was " + str(time.time() - start_time))
     response = {"bucketName" : outputBucket, "fileName" : all}
     return response 

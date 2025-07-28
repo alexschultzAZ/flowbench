@@ -38,11 +38,6 @@ def load_from_local_storage(mount_path, input_dir, filename):
 
 
 def store_to_local_storage(mount_path, dir_name, source_dir, all):
-    logging.info("storing to local storage")
-    logging.info("mount_path: " + str(mount_path))
-    logging.info("dir_name: " + str(dir_name))
-    logging.info("source_dir: " + str(source_dir))
-    logging.info("all: " + str(all))
     try:
         files = os.listdir(source_dir)
         if len(files) == 0:
@@ -90,14 +85,9 @@ def handle(req):
     _files = req["fileName"]
     # pipeline_start_time = req["pipeline_start_time"]
     for file in _files:
-        logging.info("file is: " + str(file))
         original_filename = file.split("-")[0]
-        logging.info("original file is: " + str(original_filename))
         
         mountPath = "/tmp/"
-        logging.info("mountPath: " + str(mountPath))
-        logging.info("bucket: " + str(bucket))
-        logging.info("file: " + file)
         response_msg, isPresent = load_from_local_storage(mountPath, bucket, file)
         if isPresent:
             new_file = response_msg
@@ -105,22 +95,18 @@ def handle(req):
             print('No input file to read')
             print(response_msg)
             exit(1)
-        logging.info("now i'm computing for file: " + str(file))
         compute_start = time.time()
         face_fun = Face()
         outdir = face_fun.handler_small(new_file, original_filename)
         compute_end = time.time()
         # computation_time_gauge.set(compute_end - compute_start)
-        logging.info("I'm done computing for file: " + str(file))
         new_outdir = os.path.join("tmp", "stage3", os.path.basename(outdir))
-        logging.info("new_outdir: " + str(new_outdir))
-        logging.info(f'outdir is {outdir}')
         if outdir != None and outdir != '':
-            logging.info('inside outdir block')  
             store_to_local_storage(mountPath,outputBucket,outdir,all)
         
         
     # push_to_gateway(pushGateway, job=funcName, registry=registry)
     # test comment
+    logging.info("faceextract time was " + str(time.time() - start_time))
     response = {"bucketName" : outputBucket, "fileName" : all, "start_time": start_time}
     return response
