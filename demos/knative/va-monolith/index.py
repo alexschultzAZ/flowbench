@@ -11,9 +11,7 @@ def handle(req):
     
     output1 = vidsplit_handler.handle(req)
     output2 = modect_handler.handle(output1)
-    print("running facextract now (from index.py)")
     output3 = facextract_handler.handle(output2)
-    
     output4 = facerec_handler.handle(output3)
     return output4
 

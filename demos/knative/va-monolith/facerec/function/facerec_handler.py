@@ -24,6 +24,7 @@ minio_client = Minio(
     secret_key="minioadmin",
     secure=False
 )
+face_fun = Face()
 
 def load_from_minio(bucket, file):
     try:
@@ -118,10 +119,8 @@ def handle(req):
             print('No input file to read')
             print(response)
             exit(1)
-        compute_start = time.time()
-        face_fun = Face()
+        # face_fun = Face()
         outdir, name = face_fun.handler_small(new_file, original_filename)
-        compute_end = time.time()
 
         if outdir != None and outdir != '':
             files = os.listdir(outdir)
@@ -131,4 +130,4 @@ def handle(req):
     # test comment
     logging.info("facerec time was " + str(time.time() - start_time))
     response = {"bucketName" : outputBucket, "fileName" : all}
-    return response 
+    return response
