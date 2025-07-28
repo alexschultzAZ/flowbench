@@ -98,12 +98,12 @@ class WorkflowProcessor:
     def stress(self, input_tuple):    
         invoc_iter = input_tuple[0]
         invoc_count = input_tuple[1]
-        # concurrent_fns = 1
+        # concurrent_fns = 6
         # time_between_concurrent_fns = 2
         # sleeptime = (invoc_iter % concurrent_fns) * time_between_concurrent_fns
         # print("sleeping " + str(sleeptime))
         # time.sleep(sleeptime)
-        sleeptime = invoc_iter * 2
+        sleeptime = invoc_iter * 1
         print("sleeping " + str(sleeptime))
         time.sleep(sleeptime)
         pipeline_start_time = time.time()

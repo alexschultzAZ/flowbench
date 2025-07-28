@@ -25,6 +25,8 @@ minio_client = Minio(
     secure=False
 )
 
+face_fun = Face()
+
 def load_from_minio(bucket, file):
     try:
         new_file = "/tmp/" + file
@@ -162,7 +164,7 @@ def handle(req):
                     logging.info(response)
                     exit(1)
             # compute_start = time.time()
-            face_fun = Face()
+            # face_fun = Face()
             outdir, name = face_fun.handler_small(new_file, original_filename)
             # compute_end = time.time()
 

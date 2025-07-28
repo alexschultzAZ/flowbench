@@ -93,7 +93,7 @@ class Face():
                 f.write(name_list[idx_min])
             return output_dir, name_list[idx_min]
         else:
-            print(f"No face is detected")
+            # print(f"No face is detected")
             return None,None
         #t1 = time.perf_counter()
         #record = [[str(t1 - t0)]]
