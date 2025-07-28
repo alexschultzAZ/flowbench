@@ -5,7 +5,6 @@ import time
 import shutil
 from minio import Minio
 from minio.error import InvalidResponseError
-from prometheus_client import Gauge,CollectorRegistry,push_to_gateway
 from datetime import datetime
 from .handler1 import *
 import ast
@@ -35,16 +34,16 @@ def store_to_minio(bucket, ret,all):
     files = os.listdir(ret)
     if len(files) == 0:
         return
-
-    
     try:
         os.chdir(ret)
         for file in files:
             minio_client.fput_object(bucket, file, file)
             all.append(file)
         return
-    except InvalidResponseError as err:
+    except Exception as err:
+        logging.info("file: " + str(file))
         logging.info(err)
+        raise err
 
 def get_stdin():
     buf = ""
@@ -101,21 +100,15 @@ def string_to_bool(value):
 # if __name__ == "__main__":
 def handle(req):
     files = []
-    function_start_time = time.time()
+    # function_start_time = time.time()
     inputMode = os.getenv("INPUTMODE")
     outputMode = os.getenv("OUTPUTMODE")
     outputBucket = os.getenv("OUTPUTBUCKET")
     storageMode = os.getenv("STORAGE_TYPE")
     mn_fs = os.getenv("MN_FS")
     mn_fs = string_to_bool(mn_fs)
-    pushGateway = os.getenv("PUSHGATEWAY_IP")
-    registry = CollectorRegistry()
     funcName = "facextract"
     all = []
-    download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
-    upload_time_gauge = Gauge(f'minio_write_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
-    computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
-    total_time_gauge = Gauge(f'time_taken_{funcName}', f'Time took to process this {funcName}', registry=registry)
 
     if mn_fs:
         image_data = base64.b64decode(req["body"])
@@ -132,10 +125,9 @@ def handle(req):
         for file in _files:
             original_filename = file.split("-")[0]
             if storageMode == 'obj':
-                load_start = time.time()
+                # load_start = time.time()
                 new_file = load_from_minio(bucket, file)
-                load_end = time.time()
-                download_time_gauge.set(load_end - load_start)
+                # load_end = time.time()
             else:
                 mountPath = os.getenv("MOUNT_PATH")
                 response_msg, isPresent = load_from_local_storage(mountPath, bucket, file)
@@ -146,12 +138,10 @@ def handle(req):
                     logging.info(response_msg)
                     exit(1)
 
-            compute_start = time.time()
+            # compute_start = time.time()
             face_fun = Face()
             outdir = face_fun.handler_small(new_file, original_filename)
-            compute_end = time.time()
-            computation_time_gauge.set(compute_end - compute_start)
-
+            # compute_end = time.time()
             if outdir != None and outdir != '':
                 files = os.listdir(outdir)
                 if mn_fs:
@@ -169,18 +159,14 @@ def handle(req):
                         }
                     } 
                 if storageMode == 'obj':
-                    upload_start = time.time()
+                    # upload_start = time.time()
                     store_to_minio(outputBucket, outdir,all)
-                    upload_end = time.time()
-                    upload_time_gauge.set(upload_end - upload_start)
+                    # upload_end = time.time()
                     # os.remove(new_file)
                     if os.path.exists(outdir):
                         shutil.rmtree(outdir)
                 else:
                     store_to_local_storage(mountPath,outputBucket,outdir,all)
                 
-                
-    total_time_gauge.set(time.time() - function_start_time)
-    push_to_gateway(pushGateway, job=funcName, registry=registry)
     response = {"bucketName" : outputBucket, "fileName" : all, "pipeline_start_time": pipeline_start_time}
     return response

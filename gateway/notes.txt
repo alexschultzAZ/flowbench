@@ -1,0 +1,2 @@
+curl -H "Content-Type: application/json" --request POST --data '{"bucketName": "stage0", "fileName": "test_00.mp4"}' http://vidsplit.def
+ault.10.64.140.43.sslip.io

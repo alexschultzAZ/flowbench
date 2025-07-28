@@ -79,15 +79,16 @@ def solve(req):
 
         detected, gray = detect(last_gray, frame, min_area)
         if detected:
-            logging.info(f'inside detected IF block, breaking pic_index ={index}')
+            # logging.info(f'inside detected IF block, breaking pic_index ={index}')
             break
         else:
-            logging.info(f'inside detected ELSE block, removing pic_index ={index}')
+            # logging.info(f'inside detected ELSE block, removing pic_index ={index}')
             last_gray = gray
             os.remove(path)
             
-    logging.info(f'final out_dir in handle is {len(os.listdir(output_dir))}')
+    # logging.info(f'final out_dir in handle is {len(os.listdir(output_dir))}')
     if len(os.listdir(output_dir)) == 0:
+        logging.info("in this else " + str(output_dir))
         os.rmdir(output_dir)
         return ''
 

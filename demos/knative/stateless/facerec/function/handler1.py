@@ -8,7 +8,6 @@ from facenet_pytorch import MTCNN, InceptionResnetV1
 from datetime import datetime
 import time
 import numpy as np
-import requests
 import torch
 
 class Face():

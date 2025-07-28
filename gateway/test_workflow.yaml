@@ -3,7 +3,7 @@ provider:
 
 
 workflow_logic:
-  name: pipeline
+  name: branching
 
 functions:
 
@@ -13,15 +13,13 @@ functions:
     order: 1
     data:
       bucketName: "stage0"
-      fileName: "test_01.mp4"
+      fileName: "test_00.mp4"
     environment:
-      NEXT_URL: "http://modect.default.svc.cluster.local"
       OUTPUTBUCKET: stage1
       write_debug: true
       STORAGE_TYPE: obj
       MN_FS: false
-      ENDPOINTINPUT: "172.17.0.1:9000"
-      PUSHGATEWAY_IP: "prom-pushgateway.default.svc.cluster.local:9091"
+      ENDPOINTINPUT: "192.168.1.99:9000"
    
 
   modect:
@@ -37,8 +35,7 @@ functions:
       MODECT_SKIP_RATE: 1
       write_debug: true
       MN_FS: false
-      ENDPOINTINPUT: "172.17.0.1:9000"
-      PUSHGATEWAY_IP: "prom-pushgateway.default.svc.cluster.local:9091"
+      ENDPOINTINPUT: "192.168.1.99:9000"
 
   facextract:
     name: facextract
@@ -53,8 +50,7 @@ functions:
       MODECT_SKIP_RATE: 1
       write_debug: true
       MN_FS: false
-      ENDPOINTINPUT: "172.17.0.1:9000"
-      PUSHGATEWAY_IP: "prom-pushgateway.default.svc.cluster.local:9091"
+      ENDPOINTINPUT: "192.168.1.99:9000"
   facerec:
     name: facerec
     order: 4
@@ -67,5 +63,4 @@ functions:
       MODECT_SKIP_RATE: 1
       write_debug: true
       MN_FS: false
-      ENDPOINTINPUT: "172.17.0.1:9000"
-      PUSHGATEWAY_IP: "prom-pushgateway.default.svc.cluster.local:9091"
+      ENDPOINTINPUT: "192.168.1.99:9000"

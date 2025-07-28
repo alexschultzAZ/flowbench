@@ -7,10 +7,8 @@ import os
 import sys
 import time
 import shutil
-import requests
 from minio import Minio
 from minio.error import InvalidResponseError
-from prometheus_client import Gauge,CollectorRegistry,push_to_gateway
 from .handler1 import *
 from datetime import datetime
 import ast
@@ -46,8 +44,10 @@ def store_to_minio(bucket, ret):
         for file in files:
             minio_client.fput_object(bucket, file, file)
         return
-    except InvalidResponseError as err:
+    except Exception as err:
+        logging.info("file: " + str(file))
         logging.info(err)
+        raise err
 
 def get_stdin():
     buf = ""
@@ -119,26 +119,18 @@ def string_to_bool(value):
         return False
 # if __name__ == "__main__":
 def handle(req):
-    function_start_time = time.time()
-    load_start = 0
-    load_end = 0
+    # function_start_time = time.time()
+    # load_start = 0
+    # load_end = 0
     _files = []
     all = []
     # st = get_stdin()
     # req = ast.literal_eval(req)
     mn_fs = os.getenv("MN_FS")
     mn_fs = string_to_bool(mn_fs)
-    pushGateway = os.getenv("PUSHGATEWAY_IP")
-    registry = CollectorRegistry()
     funcName = "facerec"
     outputBucket = os.getenv("OUTPUTBUCKET")
-    download_time_gauge = Gauge(f'minio_read_time_seconds_{funcName}', 'Time spent reading from Minio', registry=registry)
-    upload_time_gauge = Gauge(f'minio_write_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
-    computation_time_gauge = Gauge(f'computation_time_seconds_{funcName}', 'Time spent writing to Minio', registry=registry)
-    total_time_gauge = Gauge(f'time_taken_{funcName}', f'Time took to process this {funcName}', registry=registry)
-
-    pipeline_total_time_gauge = Gauge(f'pipeline_time_taken', f'Time took to process the entire pipeline', registry=registry)
-
+    
     if mn_fs:
         image_data = base64.b64decode(req["body"])
         file = req["headers"]["Content-Disposition"].split(";")[1].split("=")[1]
@@ -157,10 +149,9 @@ def handle(req):
         for index, file in enumerate(_files):
             original_filename = file.split("-")[0]
             if storageMode == 'obj':
-                load_start = time.time()
+                # load_start = time.time()
                 new_file = load_from_minio(bucket, file)
-                load_end = time.time()
-                download_time_gauge.set(load_end - load_start)
+                # load_end = time.time()
             else:
                 mountPath = os.getenv("MOUNT_PATH")
                 response, isPresent = load_from_local_storage(mountPath,bucket,file)
@@ -170,11 +161,10 @@ def handle(req):
                     logging.info('No input file to read')
                     logging.info(response)
                     exit(1)
-            compute_start = time.time()
+            # compute_start = time.time()
             face_fun = Face()
             outdir, name = face_fun.handler_small(new_file, original_filename)
-            compute_end = time.time()
-            computation_time_gauge.set(compute_end - compute_start)
+            # compute_end = time.time()
 
             if outdir != None and outdir != '':
                 files = os.listdir(outdir)
@@ -196,21 +186,13 @@ def handle(req):
                         }
                     }
                 if storageMode == 'obj':
-                    upload_start = time.time()
+                    # upload_start = time.time()
                     store_to_minio(outputBucket, outdir,all)
-                    upload_end = time.time()
-                    upload_time_gauge.set(upload_end - upload_start)
+                    # upload_end = time.time()
                     if os.path.exists(outdir):
                         shutil.rmtree(outdir)
                 else:
                     store_to_local_storage(mountPath,outputBucket,outdir,all)
-            pipeline_frame_time = Gauge(f'pipeline_time_for_{original_filename}_frame_{index+1}', f'Time took to process the current file frame', registry=registry)
-            pipeline_frame_time.set(time.time() - pipeline_start_time)
-            push_to_gateway(pushGateway, job=funcName, registry=registry)
-
     
-    total_time_gauge.set(time.time() - function_start_time)
-    pipeline_total_time_gauge.set(time.time() - pipeline_start_time)
-    push_to_gateway(pushGateway, job=funcName, registry=registry)
     response = {"bucketName" : outputBucket, "fileName" : all, "pipeline_start_time": pipeline_start_time, "total_time": time.time()-(pipeline_start_time if pipeline_start_time else time.time())}
     return response 
