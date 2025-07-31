@@ -14,33 +14,6 @@ class Face():
         self.device = 'cpu'
         self.mtcnn = MTCNN(keep_all=True, device='cpu')
 
-    def store_to_minio(self, bucket, ret, record):
-        files = os.listdir(ret)
-        if len(files) == 0:
-            return
-
-        minioClient = Minio(os.environ["ENDPOINTOUTPUT"],
-                            os.environ["ACCESSKEYOUTPUT"],
-                            os.environ["SECRETKEYOUTPUT"],
-                            secure=False)
-        # Put an object.
-        try:
-            os.chdir(ret)
-            store_lat = []
-            comm_lat = []
-            for file in files:
-                t0 = time.perf_counter()
-                minioClient.fput_object(bucket, file, file)
-                t1 = time.perf_counter()
-                self.invoke_next_function(bucket, ret, file)
-                t2 = time.perf_counter()
-                store_lat.append(str(t1 - t0))
-                comm_lat.append(str(t2 - t1))
-            record.append(store_lat)
-            record.append(comm_lat)
-            return
-        except:
-            print("Error in put object")
 
 
     def forward(self, req, original_filename):

@@ -123,13 +123,10 @@ def handle(req):
         bucket = req["bucketName"]
         _files = req["fileName"]
         pipeline_start_time = req["pipeline_start_time"]
-        logging.info(f'files received {len(_files)}')
         for file in _files:
             original_filename = file.split("-")[0]
             if storageMode == 'obj':
-                # load_start = time.time()
                 new_file = load_from_minio(bucket, file)
-                # load_end = time.time()
             else:
                 mountPath = os.getenv("MOUNT_PATH")
                 response_msg, isPresent = load_from_local_storage(mountPath, bucket, file)
@@ -140,10 +137,8 @@ def handle(req):
                     logging.info(response_msg)
                     exit(1)
 
-            # compute_start = time.time()
-            # face_fun = Face()
             outdir = face_fun.handler_small(new_file, original_filename)
-            # compute_end = time.time()
+            
             if outdir != None and outdir != '':
                 files = os.listdir(outdir)
                 if mn_fs:

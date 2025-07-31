@@ -62,7 +62,7 @@ def solve(req):
     # if one frame contains motion, hand all coming frames to the next stage, otherwise remove the frame
     pics = sorted(os.listdir(output_dir))
     logging.info(f"Pics is {len(pics)}")
-    for index, pic in enumerate(pics):
+    for pic in pics:
         path = os.path.join(output_dir, pic)
         frame = cv2.imread(path, cv2.IMREAD_COLOR)
         if frame is None:
@@ -71,7 +71,7 @@ def solve(req):
             return ''
 
         if last_gray is None:
-            logging.info(f"last_gray block continued pic_index = {index}")
+            # logging.info(f"last_gray block continued pic_index = {index}")
             frame = imutils.resize(frame, width=320)
             last_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             last_gray = cv2.GaussianBlur(last_gray, (21, 21), 0)

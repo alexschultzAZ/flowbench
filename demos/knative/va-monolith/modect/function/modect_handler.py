@@ -72,8 +72,6 @@ def string_to_bool(value):
     
 
 def handle(req):
-    logging.info("modect2")
-    logging.info(str(req))
     start_time = time.time()
     files = []
     # bucket = req['outdir']

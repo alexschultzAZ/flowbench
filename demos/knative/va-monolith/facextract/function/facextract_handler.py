@@ -11,6 +11,8 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
+face_fun = Face()
+
 
 def get_stdin():
     buf = ""
@@ -95,11 +97,8 @@ def handle(req):
             print('No input file to read')
             print(response_msg)
             exit(1)
-        compute_start = time.time()
         face_fun = Face()
         outdir = face_fun.handler_small(new_file, original_filename)
-        compute_end = time.time()
-        # computation_time_gauge.set(compute_end - compute_start)
         new_outdir = os.path.join("tmp", "stage3", os.path.basename(outdir))
         if outdir != None and outdir != '':
             store_to_local_storage(mountPath,outputBucket,outdir,all)

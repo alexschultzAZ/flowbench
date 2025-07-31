@@ -66,7 +66,7 @@ class Face():
 
         t0 = time.perf_counter()
         img = cv2.imread(req, cv2.IMREAD_COLOR)
-        boxes, _ = self.mtcnn.detect(img)
+        boxes, _ = self.mtcnn.detect(img) ########
 
         img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         #new_pic = output_dir + "/" + "stage-" + str(os.getenv('PIPELINE_STAGE')) + "-" + \

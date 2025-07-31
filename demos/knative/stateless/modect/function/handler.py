@@ -106,15 +106,6 @@ def string_to_bool(value):
         return False
     
 def handle(req):
-    logging.info("in modect1")
-    # request_start_ts = str(round(time.time() * 1000000000))
-    # function_start_time= time.time()
-    # compute_start = 0
-    # compute_end = 0
-    # store_start = 0
-    # store_end = 0
-    # load_start = 0
-    # load_end = 0
 
     files = []
     bucket = ''
