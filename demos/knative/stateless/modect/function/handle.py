@@ -44,10 +44,7 @@ def solve(req):
     # rename the files for logging purpose
     pics = sorted(os.listdir(input_dir))
     segments = req.split("/")[-1].split("-")
-    prefix_prev = "-".join(segments[:-1])
     segments[1] = stage
-    prefix_now = "-".join(segments[:-1])
-    ext = segments[-1].split(".")[1]
     skip = int(os.getenv('MODECT_SKIP_RATE'))
 
     idx = 1
@@ -61,8 +58,10 @@ def solve(req):
 
     # if one frame contains motion, hand all coming frames to the next stage, otherwise remove the frame
     pics = sorted(os.listdir(output_dir))
-    logging.info(f"Pics is {len(pics)}")
-    for pic in pics:
+    # logging.info("init pics is: " + str(pics))
+    # logging.info(f"Pics is {len(pics)}")
+    for index, pic in enumerate(pics):
+        # logging.info("looking at pic " + str(pic))
         path = os.path.join(output_dir, pic)
         frame = cv2.imread(path, cv2.IMREAD_COLOR)
         if frame is None:
@@ -84,13 +83,13 @@ def solve(req):
         else:
             # logging.info(f'inside detected ELSE block, removing pic_index ={index}')
             last_gray = gray
-            os.remove(path)
+
+            pics.remove(pic)
             
-    # logging.info(f'final out_dir in handle is {len(os.listdir(output_dir))}')
+
     if len(os.listdir(output_dir)) == 0:
-        logging.info("in this else " + str(output_dir))
+
         os.rmdir(output_dir)
         return ''
-
-    return output_dir
+    return pics, output_dir
 

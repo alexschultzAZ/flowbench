@@ -68,7 +68,7 @@ spec:
         - name: MODECT_MIN_AREA
           value: '5'
         - name: MODECT_SKIP_RATE
-          value: '1'
+          value: '5'
         - name: write_debug
           value: 'True'
         - name: MN_FS
@@ -111,20 +111,8 @@ spec:
           value: local
         - name: MOUNT_PATH
           value: /mnt/local-storage
-        - name: PIPELINE_STAGE
-          value: '2'
-        - name: MODECT_MIN_AREA
-          value: '5'
-        - name: MODECT_SKIP_RATE
-          value: '1'
-        - name: write_debug
-          value: 'True'
-        - name: MN_FS
-          value: 'False'
         - name: ENDPOINTINPUT
           value: 172.17.0.1:9000
-        - name: PUSHGATEWAY_IP
-          value: prom-pushgateway.default.svc.cluster.local:9091
         image: flowbench2024/kn-facextract-stateless
         volumeMounts:
             - name: my-volume
@@ -157,20 +145,8 @@ spec:
           value: local
         - name: MOUNT_PATH
           value: /mnt/local-storage
-        - name: PIPELINE_STAGE
-          value: '2'
-        - name: MODECT_MIN_AREA
-          value: '5'
-        - name: MODECT_SKIP_RATE
-          value: '1'
-        - name: write_debug
-          value: 'True'
-        - name: MN_FS
-          value: 'False'
         - name: ENDPOINTINPUT
           value: 172.17.0.1:9000
-        - name: PUSHGATEWAY_IP
-          value: prom-pushgateway.default.svc.cluster.local:9091
         image: flowbench2024/kn-facerec-stateless
         volumeMounts:
             - name: my-volume

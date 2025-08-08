@@ -3,6 +3,7 @@ import subprocess
 import yaml
 import datetime
 import multiprocessing
+import math
 import json
 import time
 from random import randrange
@@ -27,9 +28,9 @@ class WorkflowProcessor:
         # token = "HsVegDZ9D7ZOrbJBcv5IqzfrkhtyvdIR7Zde8qzyJI4hjgZpg87ffsG3yt7cBHAvzCHohSdYVXoivmL22jJlXQ=="           # Replace with your InfluxDB API token
         # self.org = "testorg"                        # Replace with your organization name
         # self.bucket = "testbucket"                  # Replace with the bucket name you want to write data to
-        token = "HsVegDZ9D7ZOrbJBcv5IqzfrkhtyvdIR7Zde8qzyJI4hjgZpg87ffsG3yt7cBHAvzCHohSdYVXoivmL22jJlXQ=="           # Replace with your InfluxDB API token
-        self.org = "testorg"                        # Replace with your organization name
-        self.bucket = "testbucket"                  # Replace with the bucket name you want to write data to    #CHANGE ALL THE ABOVE STUFF PER MACHINE
+        token = "cYdU0evPogU3_-2gmUBA72U3saY_666UsSh6-zXM8nr_8WHPbNXmCp-cNCPP2JqmCN3ON8Vy-Vgv8koDfYQbGQ=="           # Replace with your InfluxDB API token
+        self.org = "test"                        # Replace with your organization name
+        self.bucket = "test"                  # Replace with the bucket name you want to write data to    #CHANGE ALL THE ABOVE STUFF PER MACHINE
 
         # Create a client instance
         self.client = InfluxDBClient(url=url, token=token, org=self.org, timeout=30000)
@@ -98,32 +99,27 @@ class WorkflowProcessor:
     def stress(self, input_tuple):    
         invoc_iter = input_tuple[0]
         invoc_count = input_tuple[1]
-        # concurrent_fns = 6
-        # time_between_concurrent_fns = 2
-        # sleeptime = (invoc_iter % concurrent_fns) * time_between_concurrent_fns
-        # print("sleeping " + str(sleeptime))
-        # time.sleep(sleeptime)
-        sleeptime = invoc_iter * 1
-        print("sleeping " + str(sleeptime))
+        concurrent_fns = 3
+        time_between_concurrent_fns = 2
+        sleeptime = math.ceil((invoc_iter-1) / concurrent_fns) * time_between_concurrent_fns
+        # print("iter: " + str(invoc_iter) + f" sleeping {sleeptime}")
         time.sleep(sleeptime)
         pipeline_start_time = time.time()
         input_data=None
-        # print(f"funcs len is {len(self.execution_order.items())}")
         exception_encountered = False
         for __, func_list in self.execution_order.items():
             func = func_list[0]
             if input_data is None:
                 input_data = func['data']
-            # print(f"func = {func}, input_data = {input_data}")
             if(len(func_list) > 1):
                 print("Pipeline workflow cannot have two or more functions at the same level")
                 return
             try:
                 service_url = get_knative_service_url(func['name'])
-                # Call the knative function/service
-                # print("Calling " + func['name'])
+                req_time = time.time()
                 response = requests.post(service_url, json=input_data)
-                # print("Response =",response.text)
+                # if func['name'] == "facerec":
+                #     print("time took for " + str(func['name']) + " was " + (str(time.time() - req_time)))
                 input_data = response.json()
                 # print("Called " + func['name'])
             except Exception as e:
@@ -132,6 +128,7 @@ class WorkflowProcessor:
             
         if not exception_encountered:
             pipeline_end_to_end_time = time.time() - pipeline_start_time
+            print("iter: " + str(invoc_iter) + " took " + str(pipeline_end_to_end_time))
             point = (
                 Point("end_to_end_time")               # measurement name
                 # .tag("frame", str(frame))          # optional tag

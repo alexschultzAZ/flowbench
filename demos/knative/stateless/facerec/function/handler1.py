@@ -7,7 +7,6 @@ from shutil import rmtree
 from facenet_pytorch import MTCNN, InceptionResnetV1
 from datetime import datetime
 import time
-import numpy as np
 import torch
 
 class Face():
@@ -91,10 +90,11 @@ class Face():
             # Save the result name in a file
             with open(new_file+".txt", 'w+') as f:
                 f.write(name_list[idx_min])
-            return output_dir, name_list[idx_min]
+            return new_file+".txt"
+            # return output_dir, name_list[idx_min]
         else:
             # print(f"No face is detected")
-            return None,None
+            return None
         #t1 = time.perf_counter()
         #record = [[str(t1 - t0)]]
         #self.store_to_minio(os.environ["OUTPUTBUCKET"], output_dir, record)
@@ -105,6 +105,6 @@ class Face():
 
 
     def handler_small(self, newfile, original_filename):
-        output_dir, name = self.forward(newfile, original_filename)
-        return output_dir, name
+        name = self.forward(newfile, original_filename)
+        return name
 

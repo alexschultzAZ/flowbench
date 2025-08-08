@@ -1,7 +1,5 @@
-import base64
 import os
 import sys
-import time
 import shutil
 import ast
 from minio import Minio
@@ -21,32 +19,22 @@ minio_client = Minio(
     secure=False
 )
 
-def store_to_minio(bucket, ret):
-    files_out = []
-    files = os.listdir(ret)
-    if len(files) == 0:
+def store_to_minio(bucket, output_dir, files_to_save):
+    if len(files_to_save) == 0:
         return
-    # logging.info("ret: " + str(ret))
-    os.chdir(ret)
-    for file in files:
-        # logging.info("flret: " + str(file))
+
+    for file in files_to_save:
         try:
-            minio_client.fput_object(bucket, file, file)
-            files_out.append(file)
+            minio_client.fput_object(bucket, os.path.basename(file), os.path.join(output_dir, file))
         except Exception as err:
             logging.info("skipping file: " + str(file))
-            logging.info(err)
-    return files_out
 
 
 def load_from_minio(bucket, file):
     try:
-        logging.info("bucket: " + str(bucket))
-        logging.info("file: " + str(file))
+
         new_file = f"/tmp/{datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}-{file}"
-        logging.info("new_file: " + str(new_file))
         minio_client.fget_object(bucket, file, new_file)
-        logging.info("loaded")
         return new_file
     except InvalidResponseError as err:
         logging.info(err)
@@ -107,97 +95,30 @@ def string_to_bool(value):
     
 def handle(req):
 
-    files = []
     bucket = ''
     file = ''
     outdir = ''
 
-    inputMode = os.getenv('INPUTMODE')
     outputBucket = os.getenv("OUTPUTBUCKET")
     mount_path = os.getenv("MOUNT_PATH")
-    outputMode = os.getenv("OUTPUTMODE")
     storageMode = os.getenv("STORAGE_TYPE")
-    mn_fs = os.getenv("MN_FS")
-    mn_fs = string_to_bool(mn_fs)
-    funcName = "modect"
-
-    if storageMode == 'http':
-        file = os.getenv("Http_Referer")
-        new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
-        f = open(new_file, "wb+")
-        f.write(sys.stdin.buffer.read())
-        f.close()
-
-        original_filename = file.split("-")[0]
-        # compute_start = time.time()
-        outdir = solve(new_file)
-        # compute_end = time.time()
+    bucket = req["bucketName"]
+    file =  req["fileName"]
+    pipeline_start_time = req["pipeline_start_time"]
+    if storageMode == 'obj':
+        new_file = load_from_minio(bucket, file)
+        # outdir = solve(new_file) # need to get this to spit back the .jpg file names specificallyh not just a dir thlen feed those to store to minio
+        files_to_save, output_dir = solve(new_file)
+    else: # if local
+        new_file, isPresent = load_from_local_storage(mount_path, bucket, file)
+        files_to_save, outdir = solve(new_file)
+        
+    if storageMode == 'obj':
+        store_to_minio(outputBucket, output_dir, files_to_save)
     else:
-        # st = get_stdin()
-        # bucket = st.split(' ')[0]
-        # file = st.split(' ')[1].rstrip("\n")
-        if mn_fs:
-            # reqJSON = ast.literal_eval(req)
-            # logging.info(type(reqJSON))
-            decodedFile = base64.b64decode(req["body"])
-            file = req["headers"]["Content-Disposition"].split(";")[1].split("=")[1]
-            new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
-            with open(new_file,"wb") as zipfile:
-                zipfile.write(decodedFile)
-            outdir = solve(new_file)
-        else:
-            #reqJSON = ast.literal_eval(req)
-        #req = dict(item.split("=") for item in req.split("&"))
-            bucket = req["bucketName"]
-            file =  req["fileName"]
-            pipeline_start_time = req["pipeline_start_time"]
-            if storageMode == 'obj':
-                # load_start = time.time()
-                new_file = load_from_minio(bucket, file)
-                # load_end = time.time()
-                original_filename = file.split("-")[0]
-                # compute_start = time.time()
-                outdir = solve(new_file)
-                # compute_end = time.time()
-            else:
-                response_msg, isPresent = load_from_local_storage(mount_path, bucket, file)
-                if isPresent:
-                    new_file = response_msg
-                    outdir = solve(response_msg)
-                else:
-                    logging.info('No input file to read')
-                    logging.info(response_msg)
-                    exit(1)
-
-    if outdir != None and outdir != '':
-        files = os.listdir(outdir)
-        if mn_fs:
-            image_path = os.path.join(outdir,files[0])
-            with open(image_path, "rb") as image_file:
-                image_data = image_file.read()
-            image_base64 = base64.b64encode(image_data).decode('utf-8')
-            return {
-                "statusCode": 200,
-                "body": image_base64,
-                "headers": {
-                    "Content-Type": "image/jpeg",
-                    "Content-Disposition": f"attachment; filename={files[0]}",
-                    "Content-Transfer-Encoding": "base64"
-                }
-            } 
-        if storageMode == 'obj':
-            # upload_start = time.time()
-            logging.info("files was: " + str(len(files)))
-            files = store_to_minio(outputBucket, outdir)
-            logging.info("files is now: " + str(len(files)))
-            # upload_end = time.time()
-            os.remove(new_file)
-            if os.path.exists(outdir):
-                shutil.rmtree(outdir)
-        else:
-            store_to_local_storage(mount_path,outputBucket,outdir)
+        store_to_local_storage(mount_path,outputBucket,outdir)
 
    
-    logging.info(f'modect files len = {len(files)}')
-    response = {"bucketName" : outputBucket, "fileName" : files, "pipeline_start_time": pipeline_start_time}
+    # logging.info(f'modect files len = {len(files_to_save)}')
+    response = {"bucketName" : outputBucket, "fileName" : files_to_save, "pipeline_start_time": pipeline_start_time}
     return response

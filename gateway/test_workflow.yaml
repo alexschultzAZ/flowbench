@@ -3,7 +3,7 @@ provider:
 
 
 workflow_logic:
-  name: branching
+  name: pipeline
 
 functions:
 
@@ -13,13 +13,13 @@ functions:
     order: 1
     data:
       bucketName: "stage0"
-      fileName: "test_00.mp4"
+      fileName: "test_01.mp4"
     environment:
       OUTPUTBUCKET: stage1
       write_debug: true
       STORAGE_TYPE: obj
       MN_FS: false
-      ENDPOINTINPUT: "192.168.1.99:9000"
+      ENDPOINTINPUT: "192.168.1.111:9000"
    
 
   modect:
@@ -35,7 +35,7 @@ functions:
       MODECT_SKIP_RATE: 1
       write_debug: true
       MN_FS: false
-      ENDPOINTINPUT: "192.168.1.99:9000"
+      ENDPOINTINPUT: "192.168.1.111:9000"
 
   facextract:
     name: facextract
@@ -50,7 +50,7 @@ functions:
       MODECT_SKIP_RATE: 1
       write_debug: true
       MN_FS: false
-      ENDPOINTINPUT: "192.168.1.99:9000"
+      ENDPOINTINPUT: "192.168.1.111:9000"
   facerec:
     name: facerec
     order: 4
@@ -63,4 +63,4 @@ functions:
       MODECT_SKIP_RATE: 1
       write_debug: true
       MN_FS: false
-      ENDPOINTINPUT: "192.168.1.99:9000"
+      ENDPOINTINPUT: "192.168.1.111:9000"

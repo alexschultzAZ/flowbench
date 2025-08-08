@@ -85,8 +85,8 @@ spec:
     metadata:
       annotations:
         autoscaling.knative.dev/metric: concurrency
-        autoscaling.knative.dev/min-scale: '5'
-        autoscaling.knative.dev/max-scale: '20'
+        autoscaling.knative.dev/min-scale: '1'
+        autoscaling.knative.dev/max-scale: '1'
     spec:
       containers:
       - env:
@@ -97,5 +97,10 @@ spec:
         - name: ENDPOINTINPUT
           value: 172.17.0.1:9000
         - name: ACCELERATION
-          value: 'cpu'
+          value: 'gpu'
         image: flowbench2024/kn-facerec-stateless
+        resources:
+            requests:
+              nvidia.com/gpu: 1
+            limits:
+              nvidia.com/gpu: 1

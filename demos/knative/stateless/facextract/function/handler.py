@@ -1,11 +1,8 @@
-import base64
 import os
 import sys
-import time
 import shutil
 from minio import Minio
 from minio.error import InvalidResponseError
-from datetime import datetime
 from .handler1 import *
 import ast
 
@@ -32,15 +29,9 @@ def load_from_minio(bucket, file):
     except InvalidResponseError as err:
         logging.info(err)
 
-def store_to_minio(bucket, ret,all):
-    files = os.listdir(ret)
-    if len(files) == 0:
-        return
+def store_to_minio(bucket, file):
     try:
-        os.chdir(ret)
-        for file in files:
-            minio_client.fput_object(bucket, file, file)
-            all.append(file)
+        minio_client.fput_object(bucket, os.path.basename(file), file)
         return
     except Exception as err:
         logging.info("file: " + str(file))
@@ -56,8 +47,8 @@ def get_stdin():
             break
     return buf
 
-def load_from_local_storage(mount_path, input_dir, filename):
 
+def load_from_local_storage(mount_path, input_dir, filename):
     input_dir = os.path.join(mount_path, input_dir)
     if not os.path.exists(input_dir):
         return f"Directory '{input_dir}' does not exist.", False
@@ -70,11 +61,9 @@ def load_from_local_storage(mount_path, input_dir, filename):
     if not os.path.isfile(file_path):
         return f"File '{filename}' does not exist in the directory '{input_dir}'.", False
     return file_path,True
-def store_to_local_storage(mount_path, dir_name, source_dir, all):
-    try:
-        files = os.listdir(source_dir)
-        if len(files) == 0:
-            return
+
+
+def store_to_local_storage(mount_path, dir_name, file_to_save):
         if not os.path.exists(mount_path):
             os.makedirs(mount_path)
                 
@@ -82,88 +71,46 @@ def store_to_local_storage(mount_path, dir_name, source_dir, all):
         if not os.path.exists(destination_dir):
             os.makedirs(destination_dir)
         
-        for file_name in files:
-            all.append(file_name)
-            src_file = os.path.join(source_dir, file_name)
-            dst_file = os.path.join(destination_dir, file_name)
-            shutil.move(src_file, dst_file)
-    except PermissionError as e:
-        logging.info(f"PermissionError: {e}")
-    except FileNotFoundError as e:
-        logging.info(f"FileNotFoundError: {e}")
-    except Exception as e:
-        logging.info(f"Error: {e}")
+        dst_file = os.path.join(destination_dir, os.path.basename(file_to_save))
+        shutil.move(file_to_save, dst_file)
+
 
 def string_to_bool(value):
     try:
         return ast.literal_eval(value.capitalize())
     except (ValueError, SyntaxError):
         return False
-# if __name__ == "__main__":
+
+
 def handle(req):
-    files = []
-    # function_start_time = time.time()
-    inputMode = os.getenv("INPUTMODE")
-    outputMode = os.getenv("OUTPUTMODE")
     outputBucket = os.getenv("OUTPUTBUCKET")
     storageMode = os.getenv("STORAGE_TYPE")
-    mn_fs = os.getenv("MN_FS")
-    mn_fs = string_to_bool(mn_fs)
-    funcName = "facextract"
+    mountPath = os.getenv("MOUNT_PATH")
     all = []
 
-    if mn_fs:
-        image_data = base64.b64decode(req["body"])
-        file = req["headers"]["Content-Disposition"].split(";")[1].split("=")[1]
-        new_file = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f") + "-" + file
-        with open(new_file,"wb") as image_file:
-            image_file.write(image_data)
+    bucket = req["bucketName"]
+    _files = req["fileName"]
+    pipeline_start_time = req["pipeline_start_time"]
+    for file in _files:
         original_filename = file.split("-")[0]
-    else:
-        bucket = req["bucketName"]
-        _files = req["fileName"]
-        pipeline_start_time = req["pipeline_start_time"]
-        for file in _files:
-            original_filename = file.split("-")[0]
-            if storageMode == 'obj':
-                new_file = load_from_minio(bucket, file)
+        if storageMode == 'obj':
+            new_file = load_from_minio(bucket, file)
+        else:
+            response_msg, isPresent = load_from_local_storage(mountPath, bucket, file)
+            if isPresent:
+                new_file = response_msg
             else:
-                mountPath = os.getenv("MOUNT_PATH")
-                response_msg, isPresent = load_from_local_storage(mountPath, bucket, file)
-                if isPresent:
-                    new_file = response_msg
-                else:
-                    logging.info('No input file to read')
-                    logging.info(response_msg)
-                    exit(1)
+                logging.info('No input file to read')
+                logging.info(response_msg)
+                exit(1)
 
-            outdir = face_fun.handler_small(new_file, original_filename)
-            
-            if outdir != None and outdir != '':
-                files = os.listdir(outdir)
-                if mn_fs:
-                    image_path = os.path.join(outdir,files[0])
-                    with open(image_path, "rb") as image_file:
-                        image_data = image_file.read()
-                    image_base64 = base64.b64encode(image_data).decode('utf-8')
-                    return {
-                        "statusCode": 200,
-                        "body": image_base64,
-                        "headers": {
-                            "Content-Type": "image/jpeg",
-                            "Content-Disposition": f"attachment; filename={files[0]}",
-                            "Content-Transfer-Encoding": "base64"
-                        }
-                    } 
-                if storageMode == 'obj':
-                    # upload_start = time.time()
-                    store_to_minio(outputBucket, outdir,all)
-                    # upload_end = time.time()
-                    # os.remove(new_file)
-                    if os.path.exists(outdir):
-                        shutil.rmtree(outdir)
-                else:
-                    store_to_local_storage(mountPath,outputBucket,outdir,all)
+        file_to_save = face_fun.handler_small(new_file, original_filename)
+        
+        if storageMode == 'obj':
+            store_to_minio(outputBucket, file_to_save)
+        else:
+            store_to_local_storage(mountPath, outputBucket, file_to_save)
+        all.append(os.path.basename(file_to_save))
                 
     response = {"bucketName" : outputBucket, "fileName" : all, "pipeline_start_time": pipeline_start_time}
     return response
