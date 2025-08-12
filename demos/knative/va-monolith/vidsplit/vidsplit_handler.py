@@ -15,8 +15,6 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-import requests
-
 MINIO_ADDRESS = os.getenv("ENDPOINTINPUT")
 minio_client = Minio(
     MINIO_ADDRESS,
@@ -29,34 +27,20 @@ minio_client = Minio(
 def list_files(directory, extension):
     return (f for f in os.listdir(directory) if f.endswith('.' + extension))
 
+
 def load_from_bucket():
     pass
 
-# def load_from_minio(bucket, file, output_dir):
-#     minioClient = Minio(os.environ["ENDPOINTINPUT"],
-#                         os.environ["ACCESSKEYINPUT"],
-#                         os.environ["SECRETKEYINPUT"],
-#                         secure=False)
-#     try:
-#         minioClient.fget_object(bucket, file, output_dir + '/' + file)
-#         return output_dir + '/' + file
-#     except:
-#         print("failed to download %s" % file)
 
-# ffmpeg -i stage-1-input.mp4 -q:v 1 -qmin 1 -qmax 1 tst/output_%01d.jpg
 def solve(req, original_filename):
-    #print("stage 1 vidsplit...")
     output_dir = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     stage = "1"
-    mode = "PIC"
 
     ext = "jpg"
     quality = "1"
-    print(str(os.getcwd()))
-    print("changing")
     os.chdir("/app/vidsplit/tmp")
     print(str(os.getcwd()))
     split_cmd = './ffmpeg -i ' + req + ' -q:v ' + quality + \
@@ -73,19 +57,8 @@ def solve(req, original_filename):
     gid = 1
     fid = 0
     pics = sorted(os.listdir(output_dir))
-    print(f"num of pics sampled in the output directory = {len(os.listdir(output_dir))}")
     prefix = output_dir + "/"+ original_filename +'-stage-' + stage + '-' + \
                     datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
-    # while fid < len(pics):
-    #    gname = prefix +'.zip'
-    #    gid += 1
-    #    with ZipFile(gname, 'w', ZIP_STORED) as zipObj2:
-    #        added = 0
-    #        while added < fps and fid < len(pics):
-    #            path = output_dir + '/' + pics[fid]
-    #            zipObj2.write(path, os.path.basename(path))
-    #            added += 1
-    #            fid += 1
 
     gname = prefix + '.zip'
     with ZipFile(gname, 'w', ZIP_STORED) as zipObj2:
@@ -183,123 +156,30 @@ def string_to_bool(value):
         return ast.literal_eval(value.capitalize())
     except (ValueError, SyntaxError):
         return False
-# if __name__ == "__main__":
+    
+
 def handle(req):
-    logging.info("req is: " + str(req))
     start_time = time.time()
     bucket = ''
     file = ''
     outdir = ''
-    storage_mode = os.getenv('STORAGE_TYPE')
-    mount_path = os.getenv('MOUNT_PATH')
     outputBucket = os.getenv("OUTPUTBUCKET1")
-    next_url = os.getenv("NEXT_URL")
-    mn_fs = os.getenv("MN_FS")
-    mn_fs = string_to_bool(mn_fs)
     response = {}
-    funcName = "vidsplit"
     files = []
 
     try:
-        logging.info("hello8")
-        logging.info("storage mode is " + str(storage_mode))
-        logging.info(str(type(storage_mode)))
-        # if storage_mode == 'http':
-        #     print("in http")
-        #     file = os.getenv("Http_Referer")
-        #     new_file = f"/tmp/{datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}-{file}"
-        #     with open(new_file, "wb+") as f:
-        #         f.write(sys.stdin.buffer.read())
-
-        #     outdir = solve(new_file, file.split(".")[0])
-        # else:
-            # print("Enter")
-            # st = get_stdin()
-            # bucket, file = st.split(' ')
-            # file = file.rstrip("\n")
-            # print(file)
-            #print(req)
-            #req = dict(item.split("=") for item in req.split("&"))
-        logging.info("req is:")
-        logging.info(str(req))
         bucket = req["bucketName"]
         file = req["fileName"]
         
-        # if storage_mode == 'local':
-        #     logging.info("in loca")
-        #     logging.info("mount_path is " + str(mount_path))
-        #     response_msg, isPresent = load_from_local_storage(mount_path, bucket, file)
-        #     if isPresent:
-        #         logging.info("is present")
-        #         new_file = response_msg
-        #         outdir = solve(new_file, file.split(".")[0])
-        #     else:
-        #         logging.info('No input file to read')
-        #         logging.info(response_msg)
-        #         exit(1)
-        # else: 
-        #     print("loading then solving minio")
-        #     load_start = time.time()
-        #     new_file = load_from_minio(bucket, file)
-        #     load_end = time.time()
-        #     compute_start = time.time()
-        #     outdir = solve(new_file, file.split(".")[0])
-        #     compute_end = time.time()
-
-        print("loading then solving minio")
-        load_start = time.time()
         new_file = load_from_minio(bucket, file)
-        load_end = time.time()
-        compute_start = time.time()
         outdir = solve(new_file, file.split(".")[0])
-        compute_end = time.time()
 
         if outdir:
             files = os.listdir(outdir)
             store_to_local_storage("/tmp/", outputBucket, outdir) # store to local, not minio
-            # # if mn_fs:
-            # #     zip_file_path = os.path.join(outdir, files[0])
-            # #     with open(zip_file_path, 'rb') as zip_file:
-            # #         zip_content = zip_file.read()
-                
-            # #     zip_base64 = base64.b64encode(zip_content).decode('utf-8')
-            # #     fileBody = {
-            # #         "body": zip_base64,
-            # #         "headers": {
-            # #             "Content-Type": "application/zip",
-            # #             "Content-Disposition": f"attachment; filename={files[0]}",
-            # #             "Content-Transfer-Encoding": "base64"
-            # #         },
-            # #         "pipeline_start_time": start_time
-            # #     }
-            # #     logging.info('sending request to modect')
-            # #     result = requests.post(next_url, json = fileBody)
-            # #     logging.info(f"Received result from next_func: {result.text}")
-            # #     end_time = time.time()
-            # #     total_time = end_time - start_time
-            # #     total_time_gauge.set(total_time)
-            # #     push_to_gateway(pushGateway, job=funcName, registry=registry)
-            # #     if result.status_code == 200:
-            # #         return {"result": result.text, "total_time": total_time}
-            # #     return {"message": "something went wrong"}
-            # if storage_mode == 'obj':
-            #     store_start = time.time()
-            #     store_to_minio(outputBucket, outdir)
-            #     store_end = time.time()
-            #     os.remove(new_file)
-            #     if os.path.exists(outdir):
-            #         shutil.rmtree(outdir)
-            # else:
-            #     store_to_local_storage(mount_path, outputBucket, outdir)
-
-        
-        
     except Exception as e:
         logging.error(f'Exception : {str(e)}')
         response = {f"Exception: {str(e)}"}
-    # push_to_gateway(pushGateway, job=funcName, registry=registry)
-    # test comment
-    logging.info("vidsplit time was " + str(time.time() - start_time))
+        
     response = {"bucketName" : outputBucket, "fileName" : files[0], "pipeline_start_time": start_time, "outdir": outdir}
-    logging.info("done with vidsplit")
     return response

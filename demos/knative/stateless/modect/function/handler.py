@@ -105,18 +105,20 @@ def handle(req):
     bucket = req["bucketName"]
     file =  req["fileName"]
     pipeline_start_time = req["pipeline_start_time"]
+    new_file = ""
     if storageMode == 'obj':
         new_file = load_from_minio(bucket, file)
         # outdir = solve(new_file) # need to get this to spit back the .jpg file names specificallyh not just a dir thlen feed those to store to minio
-        files_to_save, output_dir = solve(new_file)
+        
     else: # if local
         new_file, isPresent = load_from_local_storage(mount_path, bucket, file)
-        files_to_save, outdir = solve(new_file)
+    files_to_save, outdir = solve(new_file)
+        
         
     if storageMode == 'obj':
-        store_to_minio(outputBucket, output_dir, files_to_save)
+        store_to_minio(outputBucket, outdir, files_to_save)
     else:
-        store_to_local_storage(mount_path,outputBucket,outdir)
+        store_to_local_storage(mount_path, outputBucket, outdir)
 
    
     # logging.info(f'modect files len = {len(files_to_save)}')

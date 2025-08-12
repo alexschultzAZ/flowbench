@@ -170,7 +170,6 @@ class WorkflowProcessor:
         outputs = pool.map(self.stress, input_list_tuples)
         self.write_api.write(bucket=self.bucket, org=self.org, record=outputs, write_precision="ms")
         # prevResponse = {"bucketName" : "stage0", "fileName" : "test_00.mp4"}
-        print("here lol")
 
     
     def handle_cron(self):

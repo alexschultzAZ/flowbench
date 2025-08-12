@@ -16,12 +16,9 @@ functions:
       fileName: "test_01.mp4"
     environment:
       OUTPUTBUCKET: stage1
-      write_debug: true
       STORAGE_TYPE: obj
-      MN_FS: false
       ENDPOINTINPUT: "192.168.1.111:9000"
    
-
   modect:
     name: modect
     order: 2
@@ -30,11 +27,8 @@ functions:
       NEXT_URL: "http://facextract.default.svc.cluster.local"
       OUTPUTBUCKET: stage2
       STORAGE_TYPE: obj
-      PIPELINE_STAGE: 2
       MODECT_MIN_AREA: 5
-      MODECT_SKIP_RATE: 1
-      write_debug: true
-      MN_FS: false
+      MODECT_SKIP_RATE: 5
       ENDPOINTINPUT: "192.168.1.111:9000"
 
   facextract:
@@ -45,12 +39,8 @@ functions:
       NEXT_URL: "http://facerec.default.svc.cluster.local"
       OUTPUTBUCKET: stage3
       STORAGE_TYPE: obj
-      PIPELINE_STAGE: 2
-      MODECT_MIN_AREA: 5
-      MODECT_SKIP_RATE: 1
-      write_debug: true
-      MN_FS: false
       ENDPOINTINPUT: "192.168.1.111:9000"
+
   facerec:
     name: facerec
     order: 4
@@ -58,9 +48,4 @@ functions:
     environment:
       OUTPUTBUCKET: stage4
       STORAGE_TYPE: obj
-      PIPELINE_STAGE: 2
-      MODECT_MIN_AREA: 5
-      MODECT_SKIP_RATE: 1
-      write_debug: true
-      MN_FS: false
       ENDPOINTINPUT: "192.168.1.111:9000"

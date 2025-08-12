@@ -21,13 +21,13 @@ def detect(lgray, frame, min_area):
             return True, gray
     return False, gray
 
+
 def solve(req):
-    # print("stage 2 modect...")
     output_dir = "/tmp/" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    stage = os.getenv('PIPELINE_STAGE')
+    stage = "2"
     min_area = float(os.getenv('MODECT_MIN_AREA'))
 
     input_dir = req.split('.')[0]
@@ -40,10 +40,7 @@ def solve(req):
     # rename the files for logging purpose
     pics = sorted(os.listdir(input_dir))
     segments = req.split("/")[-1].split("-")
-    prefix_prev = "-".join(segments[:-1])
     segments[1] = stage
-    prefix_now = "-".join(segments[:-1])
-    ext = segments[-1].split(".")[1]
     skip = int(os.getenv('MODECT_SKIP_RATE'))
 
     idx = 1
@@ -57,11 +54,10 @@ def solve(req):
 
     # if one frame contains motion, hand all coming frames to the next stage, otherwise remove the frame
     pics = sorted(os.listdir(output_dir))
-    for pic in pics:
+    for index, pic in enumerate(pics):
         path = os.path.join(output_dir, pic)
         frame = cv2.imread(path, cv2.IMREAD_COLOR)
         if frame is None:
-            print("failed to open picture %s" % path)
             os.rmdir(output_dir)
             return ''
 
@@ -76,11 +72,11 @@ def solve(req):
             break
         else:
             last_gray = gray
-            os.remove(path)
-
+            pics.remove(pic)
+            
     if len(os.listdir(output_dir)) == 0:
         os.rmdir(output_dir)
         return ''
-
-    return output_dir
+    
+    return pics, output_dir
 

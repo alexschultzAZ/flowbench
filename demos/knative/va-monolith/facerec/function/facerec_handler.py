@@ -1,17 +1,9 @@
-# Copyright (c) Alex Ellis 2017. All rights reserved.
-# Copyright (c) OpenFaaS Author(s) 2018. All rights reserved.
-# Licensed under the MIT license. See LICENSE file in the project root for full license information.
-
-import base64
 import os
 import sys
 import time
-import shutil
-from flask import jsonify
 from minio import Minio
 from minio.error import InvalidResponseError
 from .handler1 import *
-from datetime import datetime
 import ast
 import logging
 
@@ -43,31 +35,12 @@ def get_stdin():
             break
     return buf
 
-def store_to_minio(mount_path, dir_name, source_dir,all):
+def store_to_minio(bucket, file):
     try:
-        files = os.listdir(source_dir)
-        if len(files) == 0:
-            return
-        if not os.path.exists(mount_path):
-            os.makedirs(mount_path)
-               
-        destination_dir = os.path.join(mount_path, os.path.basename(dir_name))
-        if not os.path.exists(destination_dir):
-            os.makedirs(destination_dir)
-       
-        for file_name in files:
-            all.append(file_name)
-            src_file = os.path.join(source_dir, file_name)
-            # dst_file = os.path.join(destination_dir, file_name)
-            # shutil.move(src_file, dst_file)
-            minio_client.fput_object("stage4", file_name, os.path.join(source_dir, file_name))
-            
-    except PermissionError as e:
-        print(f"PermissionError: {e}")
-    except FileNotFoundError as e:
-        print(f"FileNotFoundError: {e}")
-    except Exception as e:
-        print(f"Error: {e}")
+        minio_client.fput_object(bucket, os.path.basename(file), file)
+        return
+    except InvalidResponseError as err:
+        logging.info(err)
 
 
 def load_from_local_storage(mount_path, input_dir, filename):
@@ -89,21 +62,13 @@ def string_to_bool(value):
         return ast.literal_eval(value.capitalize())
     except (ValueError, SyntaxError):
         return False
-# if __name__ == "__main__":
+
+
 def handle(req):
-    
-    print("req is " + str(req))
     start_time = time.time()
-    load_start = 0
-    load_end = 0
     _files = []
     all = []
-    # st = get_stdin()
-    # req = ast.literal_eval(req)
-    mn_fs = os.getenv("MN_FS")
-    mn_fs = string_to_bool(mn_fs)
-    funcName = "facerec"
-    outputBucket = "stage4"
+    outputBucket = os.getenv("OUTPUTBUCKET4")
        
     bucket = req['bucketName']
     _files = req["fileName"]
@@ -120,11 +85,10 @@ def handle(req):
             print(response)
             exit(1)
         # face_fun = Face()
-        outdir, name = face_fun.handler_small(new_file, original_filename)
+        file_to_save = face_fun.handler_small(new_file, original_filename)
 
-        if outdir != None and outdir != '':
-            files = os.listdir(outdir)
-            store_to_minio(mountPath,outputBucket,outdir,all)
+        store_to_minio(outputBucket, file_to_save)
+        all.append(file_to_save)
         
     
     # test comment

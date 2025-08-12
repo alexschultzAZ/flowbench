@@ -23,17 +23,11 @@ spec:
             value: "stage3"
           - name: OUTPUTBUCKET4
             value: "stage4"
-          - name: STORAGE_TYPE
-            value: "obj"
           - name: ENDPOINTINPUT
             value: "172.17.0.1:9000"
-          - name: PIPELINE_STAGE
-            value: "2"
           - name: MODECT_MIN_AREA
             value: "5"
           - name: MODECT_SKIP_RATE
-            value: "1"
-          - name: MN_FS
-            value: "false"
+            value: "5"
           - name: "ACCELERATION"
-            value: "gpu"
+            value: "cpu"

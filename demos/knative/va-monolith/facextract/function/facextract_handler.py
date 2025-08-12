@@ -1,9 +1,7 @@
-import base64
 import os
 import sys
 import time
 import shutil
-from datetime import datetime
 
 from .handler1 import *
 import ast
@@ -12,7 +10,6 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 face_fun = Face()
-
 
 def get_stdin():
     buf = ""
@@ -68,24 +65,15 @@ def string_to_bool(value):
         return ast.literal_eval(value.capitalize())
     except (ValueError, SyntaxError):
         return False
-# if __name__ == "__main__":
+
+
 def handle(req):
     start_time = time.time()
-    files = []
-    inputMode = os.getenv("INPUTMODE")
-    outputMode = os.getenv("OUTPUTMODE")
     outputBucket = "stage3"
-    storageMode = os.getenv("STORAGE_TYPE")
-    next_url = os.getenv('NEXT_URL')
-    mn_fs = os.getenv("MN_FS")
-    mn_fs = string_to_bool(mn_fs)
-    logging.info(f'mn_fs value is {mn_fs}')
-    funcName = "facextract"
     all = []
 
     bucket = req["bucketName"]
     _files = req["fileName"]
-    # pipeline_start_time = req["pipeline_start_time"]
     for file in _files:
         original_filename = file.split("-")[0]
         
@@ -103,9 +91,5 @@ def handle(req):
         if outdir != None and outdir != '':
             store_to_local_storage(mountPath,outputBucket,outdir,all)
         
-        
-    # push_to_gateway(pushGateway, job=funcName, registry=registry)
-    # test comment
-    logging.info("faceextract time was " + str(time.time() - start_time))
     response = {"bucketName" : outputBucket, "fileName" : all, "start_time": start_time}
     return response
