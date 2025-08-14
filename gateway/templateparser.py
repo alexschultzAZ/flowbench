@@ -1,17 +1,19 @@
 import os
 import subprocess
 import yaml
-import datetime
+import csv
+from datetime import datetime, timezone
 import multiprocessing
 import math
-import json
 import time
-from random import randrange
 import requests
 import argparse
 from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
 from knative_deployment import build_and_deploy
+
+import pushtogdrive
+
 
 class WorkflowProcessor:
     def __init__(self, file_path):
@@ -24,19 +26,24 @@ class WorkflowProcessor:
         self.build_execution_order()
         # self.build_and_deploy_functions()
         # InfluxDB configuration
-        url = "http://localhost:8086"         # Update if your InfluxDB endpoint is different
+        # Update if your InfluxDB endpoint is different
+        url = "http://localhost:8086"
         # token = "HsVegDZ9D7ZOrbJBcv5IqzfrkhtyvdIR7Zde8qzyJI4hjgZpg87ffsG3yt7cBHAvzCHohSdYVXoivmL22jJlXQ=="           # Replace with your InfluxDB API token
         # self.org = "testorg"                        # Replace with your organization name
         # self.bucket = "testbucket"                  # Replace with the bucket name you want to write data to
-        token = "cYdU0evPogU3_-2gmUBA72U3saY_666UsSh6-zXM8nr_8WHPbNXmCp-cNCPP2JqmCN3ON8Vy-Vgv8koDfYQbGQ=="           # Replace with your InfluxDB API token
+        # Replace with your InfluxDB API token
+        token = "cYdU0evPogU3_-2gmUBA72U3saY_666UsSh6-zXM8nr_8WHPbNXmCp-cNCPP2JqmCN3ON8Vy-Vgv8koDfYQbGQ=="
         self.org = "test"                        # Replace with your organization name
-        self.bucket = "test"                  # Replace with the bucket name you want to write data to    #CHANGE ALL THE ABOVE STUFF PER MACHINE
+        # Replace with the bucket name you want to write data to    #CHANGE ALL THE ABOVE STUFF PER MACHINE
+        self.bucket = "test"
 
         # Create a client instance
-        self.client = InfluxDBClient(url=url, token=token, org=self.org, timeout=30000)
+        self.client = InfluxDBClient(
+            url=url, token=token, org=self.org, timeout=30000)
 
         # Get the write API
         self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
+        self.read_api = self.client.query_api()
 
     def load_template(self, file_path):
         # UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), 'Downloads'))
@@ -52,7 +59,7 @@ class WorkflowProcessor:
 
     def build_execution_order(self):
         if self.workflow_logic != "branching":
-            
+
             for func_details in self.functions:
                 if 'order' not in func_details:
                     continue
@@ -60,26 +67,27 @@ class WorkflowProcessor:
                 if order in self.execution_order:
                     self.execution_order[order].append(func_details)
                 else:
-                        self.execution_order[order] = [func_details]
+                    self.execution_order[order] = [func_details]
         self.execution_order = dict(sorted(self.execution_order.items()))
         print("Execution order data is {}".format(self.execution_order))
-    
-    def handle_pipeline(self):
+
+    def handle_pipeline(self):  # WIP NEEDS ATTENTION
         # prevResponse = {"bucketName" : "stage0", "fileName" : "test_00.mp4"}
 
         start_time = time.time()
-        
+
         for __, func_list in self.execution_order.items():
             func = func_list[0]
             input_data = func['data']
-            if(len(func_list) > 1):
-                print("Pipeline workflow cannot have two or more functions at the same level")
+            if (len(func_list) > 1):
+                print(
+                    "Pipeline workflow cannot have two or more functions at the same level")
                 return
-            
-            service_url = get_knative_service_url(func['name']) 
+
+            service_url = get_knative_service_url(func['name'])
             # Call the knative function/service
             response = requests.post(service_url, json=input_data)
-            print("Response =",response.text)
+            print("Response =", response.text)
             input_data = response.text
             print("Called " + func['name'])
             break
@@ -89,92 +97,113 @@ class WorkflowProcessor:
             Point("end_to_end_time")               # measurement name
             # .tag("frame", str(frame))          # optional tag
             .tag("invoc", str(0))
-            .field("end_to_end_time", pipeline_end_to_end_time)         # field value
-            .time(datetime.datetime.utcnow(), WritePrecision.NS)  # current UTC timestamp
+            # field value
+            .field("end_to_end_time", pipeline_end_to_end_time)
+            # current UTC timestamp
+            .time(datetime.utcnow(), WritePrecision.NS)
         )
         self.write_api.write(bucket=self.bucket, org=self.org, record=point)
         print(pipeline_end_to_end_time)
 
-
-    def stress(self, input_tuple):    
+    def stress(self, input_tuple):
         invoc_iter = input_tuple[0]
         invoc_count = input_tuple[1]
         concurrent_fns = 3
         time_between_concurrent_fns = 2
-        sleeptime = math.ceil((invoc_iter-1) / concurrent_fns) * time_between_concurrent_fns
+        sleeptime = math.ceil(
+            (invoc_iter-1) / concurrent_fns) * time_between_concurrent_fns
         # print("iter: " + str(invoc_iter) + f" sleeping {sleeptime}")
         time.sleep(sleeptime)
         pipeline_start_time = time.time()
-        input_data=None
+        input_data = None
         exception_encountered = False
+        metric_points = []
         for __, func_list in self.execution_order.items():
             func = func_list[0]
             if input_data is None:
                 input_data = func['data']
-            if(len(func_list) > 1):
-                print("Pipeline workflow cannot have two or more functions at the same level")
+            if (len(func_list) > 1):
+                print(
+                    "Pipeline workflow cannot have two or more functions at the same level")
                 return
             try:
                 service_url = get_knative_service_url(func['name'])
                 req_time = time.time()
                 response = requests.post(service_url, json=input_data)
-                # if func['name'] == "facerec":
-                #     print("time took for " + str(func['name']) + " was " + (str(time.time() - req_time)))
                 input_data = response.json()
-                # print("Called " + func['name'])
+                func_time = time.time() - req_time
+                point = (
+                    Point("func_time")               # measurement name
+                    .tag("func_name", str(func['name']))
+                    .tag("invoc_count", str(invoc_count))
+                    .tag("invoc", str(invoc_iter))
+                    .field("func_time", func_time)         # field value
+                    # current UTC timestamp
+                    .time(datetime.utcnow().isoformat())
+                )
+                metric_points.append(point)
             except Exception as e:
                 exception_encountered = True
-                print("exception encountered calling " + str(service_url) + " " + str(invoc_iter) + ": " + str(e))
-            
+                print("exception encountered calling " +
+                      str(service_url) + " " + str(invoc_iter) + ": " + str(e))
+
         if not exception_encountered:
             pipeline_end_to_end_time = time.time() - pipeline_start_time
-            print("iter: " + str(invoc_iter) + " took " + str(pipeline_end_to_end_time))
+            print("iter: " + str(invoc_iter) + " took " +
+                  str(pipeline_end_to_end_time))
             point = (
                 Point("end_to_end_time")               # measurement name
                 # .tag("frame", str(frame))          # optional tag
                 .tag("invoc_count", str(invoc_count))
                 .tag("invoc", str(invoc_iter))
-                .field("end_to_end_time", pipeline_end_to_end_time)         # field value
-                .time(datetime.datetime.utcnow().isoformat())  # current UTC timestamp
+                # field value
+                .field("end_to_end_time", pipeline_end_to_end_time)
+                .time(datetime.utcnow().isoformat())  # current UTC timestamp
             )
-            # self.write_api.write(bucket=self.bucket, org=self.org, record=point)
-            #print(pipeline_end_to_end_time)
-            return point
-        else:
-            point = (
-                Point("end_to_end_time")               # measurement name
-                # .tag("frame", str(frame))          # optional tag
-                .tag("invoc_count", str(invoc_count))
-                .tag("invoc", str(invoc_iter))
-                .field("end_to_end_time", 99999.999)         # field value
-                .time(datetime.datetime.utcnow().isoformat())  # current UTC timestamp
-            )
-            # self.write_api.write(bucket=self.bucket, org=self.org, record=point)
-            return point
+            metric_points.append(point)
+        return metric_points
 
     def stress_pipeline(self, invoc_count):
+        stress_start_time = datetime.now(timezone.utc).strftime(
+            "%Y-%m-%dT%H:%M:%S.%f")[:-4] + "Z"
+
         invoc_count = int(invoc_count)
-        # multiprocessing pool object
         pool = multiprocessing.Pool()
-
-        # pool object with number of element
         pool = multiprocessing.Pool(processes=invoc_count)
-
-        # input list
         invoc_iter = list(range(1, invoc_count+1))
         invoc_count = [invoc_count] * invoc_count
         input_list_tuples = [(x, y) for x, y in zip(invoc_iter, invoc_count)]
 
-        # map the function to the list and pass
-        # function and input list as arguments
         outputs = pool.map(self.stress, input_list_tuples)
-        self.write_api.write(bucket=self.bucket, org=self.org, record=outputs, write_precision="ms")
-        # prevResponse = {"bucketName" : "stage0", "fileName" : "test_00.mp4"}
+        if outputs is not None:
+            for output in outputs:
+                self.write_api.write(
+                    bucket=self.bucket, org=self.org, record=output, write_precision="ms")
 
-    
+        stress_stop_time = datetime.now(timezone.utc).strftime(
+            "%Y-%m-%dT%H:%M:%S.%f")[:-4] + "Z"
+
+        #################### METRICS ################################
+        queries = [
+            'from(bucket: "' + str(self.bucket) + '") \
+                    |> range(start: ' + stress_start_time + ', stop: ' + stress_stop_time + ') \
+                    |> filter(fn: (r) => r["_measurement"] == "end_to_end_time") \
+                    |> filter(fn: (r) => r["_field"] == "end_to_end_time")',
+            'from(bucket: "' + str(self.bucket) + '") \
+                    |> range(start: ' + stress_start_time + ', stop: ' + stress_stop_time + ') \
+                    |> filter(fn: (r) => r["_measurement"] == "func_time") \
+                    |> filter(fn: (r) => r["_field"] == "func_time")'
+        ]
+
+        csv_master = []
+        for query in queries:
+            csv_master.append(self.read_api.query_csv(query).to_values())
+
+        pushtogdrive.push_to_drive(csv_master)
+
     def handle_cron(self):
         for _, func_list in self.execution_order.items():
-            
+
             # Call the openfaas function
             # response = requests.get("http://127.0.0.1:8080/function/" + func_list[0])
             print("Called " + func_list[0])
@@ -198,21 +227,20 @@ class WorkflowProcessor:
                 print("Called {} asynchronously".format(func))
         else:
             print("Request failed with status code:", response.status_code)
-        
-        
 
     def handle_many_to_one(self):
         functions_count = len(self.execution_order['level1'])
         next_function = self.execution_order['level2'][0]
-        print("Total \'many\' function count = {}, next_function = {}".format(functions_count, next_function))
+        print("Total \'many\' function count = {}, next_function = {}".format(
+            functions_count, next_function))
         for func in self.execution_order['level1']:
             # Call each function ASYNCHRONOUSLY using /async-functionh
             # functions_count and function_name as data
             # print(f"Request was successful for {func}")
-            
+
             callback_url = f"http://192.168.0.183:5000/async-handler?functions_count={functions_count}&next_function={next_function}"
             response = requests.post(
-                f'http://127.0.0.1:8080/async-function/{func}', 
+                f'http://127.0.0.1:8080/async-function/{func}',
                 headers={
                     'X-Callback-Url': callback_url,
                 }
@@ -220,9 +248,9 @@ class WorkflowProcessor:
             if response.status_code == 202:
                 print(f"Request was successful for {func}")
             else:
-                print(f"Request failed with status code: {response.status_code}")
-            
-   
+                print(
+                    f"Request failed with status code: {response.status_code}")
+
     def validate_conditions(self, conditions):
         valid_operators = ["==", "!=", ">", "<", ">=", "<=", "and", "or"]
         if conditions['operator'] not in valid_operators:
@@ -246,14 +274,15 @@ class WorkflowProcessor:
             operator = conditions['operator']
             true_func = conditions['true_func']
             false_func = conditions['false_func']
-            
+
             # Perform type conversion if necessary
             if conditions['type'] == "int_comparison":
                 try:
                     result = int(result)
                     operand = int(operand)
                 except ValueError:
-                    raise ValueError(f"Invalid integer comparison between {result} and {operand}")
+                    raise ValueError(
+                        f"Invalid integer comparison between {result} and {operand}")
 
             elif conditions['type'] == "boolean_comparison":
                 try:
@@ -262,7 +291,8 @@ class WorkflowProcessor:
                     if type(operand) == 'string':
                         operand = bool(operand)
                 except ValueError:
-                    raise ValueError(f"Invalid boolean comparison between {result} and {operand}")
+                    raise ValueError(
+                        f"Invalid boolean comparison between {result} and {operand}")
 
             condition_met = False
             expression = f'{operand} {operator} {result}'
@@ -273,13 +303,16 @@ class WorkflowProcessor:
                 raise ValueError(f"Invalid operator: {operator}")
 
             next_func = true_func if condition_met else false_func
-            response = requests.get(f"http://127.0.0.1:8080/function/{next_func}")
+            response = requests.get(
+                f"http://127.0.0.1:8080/function/{next_func}")
             if response.status_code == 200:
                 print(f"Request was successful for {next_func}")
             else:
-                print(f"Request failed for {next_func} with status code: {response.status_code}")
+                print(
+                    f"Request failed for {next_func} with status code: {response.status_code}")
         else:
-            print(f"Request failed for {entry_func} with status code: {response.status_code}")
+            print(
+                f"Request failed for {entry_func} with status code: {response.status_code}")
 
     def process_workflow(self):
         if self.workflow_logic == "pipeline":
@@ -318,49 +351,55 @@ class WorkflowProcessor:
             self.handle_branching()
         else:
             print("error")
-    
+
     def build_and_deploy_functions(self):
         # Pass functions dict to the Knative Helper's build/deployment function
         print("building...")
         build_and_deploy(self.functions)
 
+
 def get_knative_service_url(service_name):
-        try:
-            # Run the kubectl command to get the name and URL of the service
-            result = subprocess.run(
-                ['microk8s', 'kubectl', 'get', 'ksvc', service_name, '--output=custom-columns=NAME:.metadata.name,URL:.status.url'],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-            )
+    try:
+        # Run the kubectl command to get the name and URL of the service
+        result = subprocess.run(
+            ['microk8s', 'kubectl', 'get', 'ksvc', service_name,
+                '--output=custom-columns=NAME:.metadata.name,URL:.status.url'],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
 
-            # Check if there was an error in the subprocess
-            if result.returncode != 0:
-                print(f"Error: {result.stderr}")
-                return None
-
-            # Process the output, skip the header line, and get the URL
-            output = result.stdout.strip().split('\n')
-            if len(output) < 2:
-                print("No URL found for the service, cannot proceed exiting..!!!")
-                os.exit(1)
-
-            # The second line contains the name and URL
-            name, url = output[1].split()
-            # print(url)
-            return url
-        except Exception as e:
-            print(f"An error occurred: {e}")
+        # Check if there was an error in the subprocess
+        if result.returncode != 0:
+            print(f"Error: {result.stderr}")
             return None
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Process a workflow template file.')
 
-    # Add the argument for the template file
-    parser.add_argument('template_file', type=str, help='Path to the workflow template file')
+        # Process the output, skip the header line, and get the URL
+        output = result.stdout.strip().split('\n')
+        if len(output) < 2:
+            print("No URL found for the service, cannot proceed exiting..!!!")
+            os.exit(1)
 
-    # Parse the arguments
-    args = parser.parse_args()
+        # The second line contains the name and URL
+        name, url = output[1].split()
+        # print(url)
+        return url
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
 
-    # Create the WorkflowProcessor instance with the provided file name
-    processor = WorkflowProcessor(args.template_file)
-    processor.build_and_deploy_functions()
-    processor.process_workflow()
-    self.client.close()
+
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(
+#         description='Process a workflow template file.')
+
+#     # Add the argument for the template file
+#     parser.add_argument('template_file', type=str,
+#                         help='Path to the workflow template file')
+
+#     # Parse the arguments
+#     args = parser.parse_args()
+
+#     # Create the WorkflowProcessor instance with the provided file name
+#     processor = WorkflowProcessor(args.template_file)
+#     processor.build_and_deploy_functions()
+#     processor.process_workflow()
+#     self.client.close()

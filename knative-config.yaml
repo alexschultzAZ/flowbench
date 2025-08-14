@@ -1,7 +1,7 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: va-monolith
+  name: vidsplit
   namespace: default
 spec:
   template:
@@ -13,20 +13,87 @@ spec:
     spec:
       containers:
       - env:
-        - name: OUTPUTBUCKET1
+        - name: OUTPUTBUCKET
           value: stage1
-        - name: OUTPUTBUCKET2
-          value: stage2
-        - name: OUTPUTBUCKET3
-          value: stage3
-        - name: OUTPUTBUCKET4
-          value: stage4
+        - name: STORAGE_TYPE
+          value: obj
         - name: ENDPOINTINPUT
-          value: 172.17.0.1:9000
+          value: 192.168.1.111:9000
+        image: flowbench2024/kn-vidsplit-stateless
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: modect
+  namespace: default
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/metric: concurrency
+        autoscaling.knative.dev/min-scale: '1'
+        autoscaling.knative.dev/target: '20'
+    spec:
+      containers:
+      - env:
+        - name: NEXT_URL
+          value: http://facextract.default.svc.cluster.local
+        - name: OUTPUTBUCKET
+          value: stage2
+        - name: STORAGE_TYPE
+          value: obj
         - name: MODECT_MIN_AREA
           value: '5'
         - name: MODECT_SKIP_RATE
           value: '5'
-        - name: ACCELERATION
-          value: cpu
-        image: flowbench2024/va-monolith
+        - name: ENDPOINTINPUT
+          value: 192.168.1.111:9000
+        image: flowbench2024/kn-modect-stateless
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: facextract
+  namespace: default
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/metric: concurrency
+        autoscaling.knative.dev/min-scale: '1'
+        autoscaling.knative.dev/target: '20'
+    spec:
+      containers:
+      - env:
+        - name: NEXT_URL
+          value: http://facerec.default.svc.cluster.local
+        - name: OUTPUTBUCKET
+          value: stage3
+        - name: STORAGE_TYPE
+          value: obj
+        - name: ENDPOINTINPUT
+          value: 192.168.1.111:9000
+        image: flowbench2024/kn-facextract-stateless
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: facerec
+  namespace: default
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/metric: concurrency
+        autoscaling.knative.dev/min-scale: '1'
+        autoscaling.knative.dev/target: '20'
+    spec:
+      containers:
+      - env:
+        - name: OUTPUTBUCKET
+          value: stage4
+        - name: STORAGE_TYPE
+          value: obj
+        - name: ENDPOINTINPUT
+          value: 192.168.1.111:9000
+        image: flowbench2024/kn-facerec-stateless
