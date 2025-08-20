@@ -4,3 +4,7 @@ pyyaml
 requests
 influxdb-client
 argparse
+google stuff
+prom client stuff
+
+prometheus-pandas

@@ -1,17 +1,17 @@
 import os
 import subprocess
 import yaml
-import csv
 from datetime import datetime, timezone
 import multiprocessing
 import math
 import time
 import requests
-import argparse
+from prometheus_api_client import PrometheusConnect
 from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
 from knative_deployment import build_and_deploy
-
+import pandas as pd
+from prometheus_pandas import query
 import pushtogdrive
 
 
@@ -162,9 +162,31 @@ class WorkflowProcessor:
             )
             metric_points.append(point)
         return metric_points
+    
+    
+    def get_prom_to_csv(self, prom, qr, stress_start_time_strf, stress_stop_time_strf):
+        
+        cpu_per_pod = prom.query_range(qr, stress_start_time_strf, stress_stop_time_strf, '1s')
+        
+        init_split = cpu_per_pod.to_csv().split("\n")
+        cpu_per_pod_split = []
+        for row in init_split:
+            cpu_per_pod_split.append(row.split(","))
+        
+        new_first_line = [cpu_per_pod_split[0][1]]
+        for cell in cpu_per_pod_split[0]:
+            if "pod=" in cell:
+                new_first_line.append(cell)
+        massaged_list = [new_first_line]
+        for row in cpu_per_pod_split[1:]:
+            massaged_list.append(row)
+        
+        return massaged_list
+        
 
     def stress_pipeline(self, invoc_count):
-        stress_start_time = datetime.now(timezone.utc).strftime(
+        stress_start_time = datetime.now(timezone.utc)
+        stress_start_time_strf = stress_start_time.strftime(
             "%Y-%m-%dT%H:%M:%S.%f")[:-4] + "Z"
 
         invoc_count = int(invoc_count)
@@ -180,25 +202,44 @@ class WorkflowProcessor:
                 self.write_api.write(
                     bucket=self.bucket, org=self.org, record=output, write_precision="ms")
 
-        stress_stop_time = datetime.now(timezone.utc).strftime(
+        stress_stop_time = datetime.now(timezone.utc)
+        stress_stop_time_strf = stress_stop_time.strftime(
             "%Y-%m-%dT%H:%M:%S.%f")[:-4] + "Z"
 
-        #################### METRICS ################################
+        #################### METRICS ###############################
+        # query influxdb
         queries = [
             'from(bucket: "' + str(self.bucket) + '") \
-                    |> range(start: ' + stress_start_time + ', stop: ' + stress_stop_time + ') \
+                    |> range(start: ' + stress_start_time_strf + ', stop: ' + stress_stop_time_strf + ') \
                     |> filter(fn: (r) => r["_measurement"] == "end_to_end_time") \
                     |> filter(fn: (r) => r["_field"] == "end_to_end_time")',
             'from(bucket: "' + str(self.bucket) + '") \
-                    |> range(start: ' + stress_start_time + ', stop: ' + stress_stop_time + ') \
+                    |> range(start: ' + stress_start_time_strf + ', stop: ' + stress_stop_time_strf + ') \
                     |> filter(fn: (r) => r["_measurement"] == "func_time") \
                     |> filter(fn: (r) => r["_field"] == "func_time")'
         ]
 
         csv_master = []
-        for query in queries:
-            csv_master.append(self.read_api.query_csv(query).to_values())
+        for qr in queries:
+            csv_master.append(self.read_api.query_csv(qr).to_values())
 
+        
+        
+        # query promtheus
+        prom = query.Prometheus("http://localhost:9090") # only works if port forwarding is on
+        prom_queries = [
+            'sum (rate (container_cpu_usage_seconds_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container="user-container"}[60s])) / sum (machine_cpu_cores) * 100',
+            'node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container="user-container"}',
+            'container_network_transmit_bytes_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*"}',
+            'container_memory_usage_bytes{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container="user-container"}'
+        ]
+        
+        for qr in prom_queries:
+            csv_master.append(self.get_prom_to_csv(prom, qr, stress_start_time, stress_stop_time))
+        
+        
+        
+        
         pushtogdrive.push_to_drive(csv_master)
 
     def handle_cron(self):

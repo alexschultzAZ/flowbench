@@ -53,9 +53,13 @@ if microk8s helm list -n "$NAMESPACE" | grep -q "$RELEASE_NAME"; then
 else
     echo "No existing release named '$RELEASE_NAME' found in namespace '$NAMESPACE'."
 fi
-microk8s helm install prometheus prometheus-community/kube-prometheus-stack -n default -f prom-values.yaml
+microk8s helm install prometheus prometheus-community/kube-prometheus-stack -n default -f prom-values_gpu.yaml
 
 microk8s kubectl apply -f https://raw.githubusercontent.com/knative-extensions/monitoring/main/servicemonitor.yaml
+
+microk8s helm repo add gpu-helm-charts https://nvidia.github.io/dcgm-exporter/helm-charts
+microk8s helm repo update
+helm install --generate-name gpu-helm-charts/dcgm-exporter
 
 
 sudo apt install -y tmux

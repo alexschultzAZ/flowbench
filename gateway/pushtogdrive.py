@@ -47,7 +47,7 @@ def create_sheet(sheet_service, spreadsheet_id, test_name):
         spreadsheetId=spreadsheet_id, body=body).execute()
 
 
-def write_to_sheet(sheet_service, spreadsheet_id, sheet_id, data_to_write):
+def write_csv_to_sheet(sheet_service, spreadsheet_id, sheet_id, data_to_write):
     data = []
     line_iter = 2
     for entry in data_to_write:
@@ -66,13 +66,18 @@ def write_to_sheet(sheet_service, spreadsheet_id, sheet_id, data_to_write):
         .execute()
     )
     print(f"{(result.get('totalUpdatedCells'))} cells updated.")
+    
+    
+def write_dataframe_to_sheet(spreadsheet_id, sheet_id, dataframe):
+    data = []
+    
 
 
 def push_to_drive(data_to_write):
     service = build("sheets", "v4", credentials=creds)
     new_sheet_name = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     create_sheet(service, SAMPLE_SPREADSHEET_ID, new_sheet_name)
-    write_to_sheet(service, SAMPLE_SPREADSHEET_ID,
+    write_csv_to_sheet(service, SAMPLE_SPREADSHEET_ID,
                    new_sheet_name, data_to_write)
 
 
