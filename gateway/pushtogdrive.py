@@ -43,17 +43,47 @@ def create_sheet(sheet_service, spreadsheet_id, test_name):
             }
         }]
     }
-    sheet_service.spreadsheets().batchUpdate(
-        spreadsheetId=spreadsheet_id, body=body).execute()
+    resp = sheet_service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body).execute()
 
-
+    body = {
+        "requests": [
+            {
+                "appendDimension": {
+                    "sheetId": resp['replies'][0]['addSheet']['properties']['sheetId'],
+                    "dimension": "ROWS",
+                    "length": 2000
+                }
+            },
+            {
+                "appendDimension": {
+                    "sheetId": resp['replies'][0]['addSheet']['properties']['sheetId'],
+                    "dimension": "COLUMNS",
+                    "length": 40
+                }
+            }
+        ]
+    }
+    sheet_service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body).execute()
+    
+    
+def int_to_sheets_col(int_in):
+    if int_in  >= 65 and int_in <= 90:
+        return chr(int_in)
+    elif int_in > 90 and int_in <= 116:
+        return "A" + chr(int_in - 26)
+    elif int_in > 116 and int_in <= 142:
+        return "B" + chr(int_in - 52)
+    elif int_in > 116 and int_in <= 168:
+        return "C" + chr(int_in - 78)
+    else:
+        return "lol"
+    
 def write_csv_to_sheet(sheet_service, spreadsheet_id, sheet_id, data_to_write):
     data = []
-    line_iter = 2
+    col_iter = 65
     for entry in data_to_write:
-        data.append({"range": sheet_id + "!A" +
-                    str(line_iter) + ":Z3000", "values": entry})
-        line_iter += len(entry) + 10
+        data.append({"range": sheet_id + "!" + str(int_to_sheets_col(col_iter)) + "1:ZZ2000", "values": entry})
+        col_iter += len(entry[0]) + 2
 
     body = {
         "valueInputOption": "USER_ENTERED",
@@ -66,6 +96,26 @@ def write_csv_to_sheet(sheet_service, spreadsheet_id, sheet_id, data_to_write):
         .execute()
     )
     print(f"{(result.get('totalUpdatedCells'))} cells updated.")
+
+
+# def write_csv_to_sheet(sheet_service, spreadsheet_id, sheet_id, data_to_write):
+#     data = []
+#     line_iter = 2
+#     for entry in data_to_write:
+#         data.append({"range": sheet_id + "!A" + str(line_iter) + ":Z2000", "values": entry})
+#         line_iter += len(entry) + 10
+
+#     body = {
+#         "valueInputOption": "USER_ENTERED",
+#         "data": data
+#     }
+#     result = (
+#         sheet_service.spreadsheets()
+#         .values()
+#         .batchUpdate(spreadsheetId=spreadsheet_id, body=body)
+#         .execute()
+#     )
+#     print(f"{(result.get('totalUpdatedCells'))} cells updated.")
     
     
 def write_dataframe_to_sheet(spreadsheet_id, sheet_id, dataframe):

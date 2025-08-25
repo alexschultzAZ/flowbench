@@ -231,14 +231,15 @@ class WorkflowProcessor:
             'sum (rate (container_cpu_usage_seconds_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container="user-container"}[60s])) / sum (machine_cpu_cores) * 100',
             'node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container="user-container"}',
             'container_network_transmit_bytes_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*"}',
-            'container_memory_usage_bytes{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container="user-container"}'
+            'container_memory_usage_bytes{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container="user-container"}',
+            'DCGM_FI_DEV_GPU_UTIL'
         ]
         
         for qr in prom_queries:
-            csv_master.append(self.get_prom_to_csv(prom, qr, stress_start_time, stress_stop_time))
-        
-        
-        
+            try:
+                csv_master.append(self.get_prom_to_csv(prom, qr, stress_start_time, stress_stop_time))
+            except Exception as e:
+                print("Error pulling from prom: " + str(qr))
         
         pushtogdrive.push_to_drive(csv_master)
 
