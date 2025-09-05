@@ -227,11 +227,20 @@ class WorkflowProcessor:
         
         # query promtheus
         prom = query.Prometheus("http://localhost:9090") # only works if port forwarding is on
+        # FaaS
+        # prom_queries = [
+        #     'sum (rate (container_cpu_usage_seconds_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container="user-container"}[60s])) / sum (machine_cpu_cores) * 100',
+        #     'node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container="user-container"}',
+        #     'container_network_transmit_bytes_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*"}',
+        #     'container_memory_usage_bytes{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container="user-container"}',
+        #     'DCGM_FI_DEV_GPU_UTIL'
+        # ]
+        # monolith
         prom_queries = [
-            'sum (rate (container_cpu_usage_seconds_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container="user-container"}[60s])) / sum (machine_cpu_cores) * 100',
-            'node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container="user-container"}',
-            'container_network_transmit_bytes_total{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*"}',
-            'container_memory_usage_bytes{pod=~"vidsplit.*|modect.*|facerec.*|facextract.*", container="user-container"}',
+            'sum (rate (container_cpu_usage_seconds_total{pod=~"va-monolith.*", container="user-container"}[60s])) / sum (machine_cpu_cores) * 100',
+            'node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{pod=~"va-monolith.*", container="user-container"}',
+            'container_network_transmit_bytes_total{pod=~"va-monolith.*"}',
+            'container_memory_usage_bytes{pod=~"va-monolith.*", container="user-container"}',
             'DCGM_FI_DEV_GPU_UTIL'
         ]
         
